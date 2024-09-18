@@ -1,0 +1,137 @@
+<template>
+    <div class="sidebar" @click.self="closeSidebar">
+      <!-- Welcome message -->
+      <div class="welcome">
+        <h2>Welcome, Admin!</h2>
+      </div>
+  
+      <!-- Navigation buttons -->
+      <nav class="nav">
+        <ul>
+          <li>
+            <router-link to="/dashboard">Dashboard</router-link>
+          </li>
+          <li>
+            <router-link to="/users-management">Users Management</router-link>
+          </li>
+          <li>
+            <router-link to="/security-logs">Security Logs</router-link>
+          </li>
+          <li>
+            <router-link to="/system-management">System Management</router-link>
+          </li>
+        </ul>
+      </nav>
+  
+      <!-- Add new resident button -->
+      <div class="add-resident">
+        <button @click="addResident" id="addRes">Add New Resident</button>
+        <br><br>
+        <button @click="redirect">Log Out</button>
+      </div>
+    </div>
+  </template>
+  
+  <script>
+  export default {
+    // props: ['showSidebar'],
+    // data(){
+    //     return{
+            
+    //     }
+    // },
+    methods: {
+      addResident() {
+        // Placeholder action for the Add New Resident button
+        alert("Redirect to add new resident page or show form");
+      },
+      closeSidebar(){
+        this.$emit('close')
+      },
+      redirect() {
+            this.$router.push({name: 'home'})
+        }
+    }
+  };
+  </script>
+  
+  <style>
+
+  .sidebar {
+    width: 300px;
+    height: 100vh;
+    background-color: #2c3e50;
+    color: white;
+    display: flex;
+    flex-direction: column;
+    padding: 20px;
+  }
+  
+  .welcome {
+    margin-bottom: 30px;
+    text-align: center;
+    font-size: 30px;
+  }
+
+  .nav{
+    margin: 0;
+    padding: 0;
+  }
+  
+  .nav ul {
+    list-style-type: none;
+    padding: 0;
+  }
+  
+  .nav li {
+    margin: 15px 0;
+    padding-top: 15px;
+    width: 100%;
+  }
+  
+  .nav li a {
+    color: white;
+    text-decoration: none;
+    font-size: 16px;
+    padding: 20px;
+  }
+  
+  .nav li a:hover {
+    text-decoration: underline;
+  }
+
+  .nav a.router-link-exact-active {
+    background-color: skyblue; /* Active background color */
+    color: white; /* Active text color */
+    width: 100%; /* Ensure the link fills the entire li */
+    display: block; /* Block ensures the link takes full width */
+    padding: 10px; /* Keep padding consistent */
+    box-sizing: border-box; /* Include padding in width calculation */
+    border-radius: 20px; 
+}
+  
+  .add-resident {
+    margin-top: auto;
+    text-align: center;
+    padding: 0;
+  }
+
+  #addRes{
+    background: blue;
+  }
+  
+  .add-resident button {
+    padding: 10px 20px;
+    font-size: 16px;
+    background-color: #e74c3c;
+    color: white;
+    border: none;
+    cursor: pointer;
+    border-radius: 5px;
+  }
+  
+  .add-resident button:hover {
+    background-color: #c0392b;
+  }
+  </style>
+  
