@@ -28,7 +28,7 @@
   </template>
   
   <script>
-import SecuritySidebar from '@/components/security/SecuritySidebar.vue';
+import SecuritySidebar from '@/components/securityComp/SecuritySidebar.vue';
 
 
   // Importing SidebarNav component

@@ -1,9 +1,8 @@
 <template>
   <div class="home">
-    <!-- This is where login.vue should be -->
     <div class="login-container">
       <form @submit.prevent="handleLogin">
-        <input v-model="username" placeholder="USERNAME" />
+        <input v-model="email" type="email" placeholder="EMAIL" />
         <br>
         <input v-model="password" type="password" placeholder="PASSWORD" />
         <br>
@@ -19,48 +18,83 @@
         <a href="#">Forgot password?</a>
         <br><br>
 
-        <button @click="redirect">LOGIN</button>
+        <button type="submit">LOGIN</button>
       </form>
+      <p v-if="error" class="error"> {{ error }}</p>
     </div>
   </div>
 </template>
 
 <script>
+import { db } from '@/firebase';
+import { getAuth, signInWithEmailAndPassword } from 'firebase/auth';
+import { doc, getDoc } from 'firebase/firestore';
+import { ref } from 'vue';
+import { useRouter } from 'vue-router'; // Import useRouter
+
 export default {
   name: 'LoginView',
-  data() {
+  setup() {
+    const email = ref('');
+    const password = ref('');
+    const role = ref('admin'); // Default role
+    const error = ref('');
+
+    const auth = getAuth();
+    const router = useRouter(); // Get the router instance
+
+    const handleLogin = async () => {
+      try {
+        // Sign in the user with Firebase Authentication
+        const userCredential = await signInWithEmailAndPassword(auth, email.value, password.value);
+        const user = userCredential.user;
+
+        console.log('Logged-in user UID:', user.uid);
+
+        // Fetch the user's role from Firestore using the user UID
+        const userDocRef = doc(db, 'users', user.uid); // DocumentReference
+        const userDoc = await getDoc(userDocRef); // DocumentSnapshot
+
+        if (userDoc.exists()) {
+          const userData = userDoc.data();
+          console.log('User data:', userData);
+
+          if (userData.role === role.value) {
+            console.log(`Successful "${role.value}" user login`);
+            // Use router.push instead of this.$router.push
+            if (role.value === 'admin') {
+              router.push({ name: 'dashboard' });
+            } else if (role.value === 'resident') {
+              router.push({ name: 'user-dashboard' });
+            } else if (role.value === 'security') {
+              router.push({ name: 'security-dashboard' });
+            }
+          } else {
+            error.value = `Role mismatch! You selected "${role.value}" but your role is "${userData.role}"`;
+          }
+        } else {
+          console.error('No user data found in Firestore!');
+          error.value = 'User data not found in Firestore!';
+        }
+      } catch (err) {
+        console.error('Login failed:', err.message);
+        error.value = `Login failed: ${err.message}`;
+      }
+    };
+
     return {
-      username: '',
-      password: '',
-      role: ''
-    }
-  },
-  methods: {
-    redirect() {
-      if (this.username === 'admin' && 
-      this.password === 'admin' && 
-      this.role === 'admin') {
-        this.$router.push({ name: 'dashboard' });
-      } 
-      else if (this.username === this.username && 
-      this.password === this.password && 
-      this.role === 'resident') {
-        this.$router.push({ name: 'user-dashboard' });
-      }
-      else if (this.username === this.username && 
-      this.password === this.password && 
-      this.role === 'security') {
-        this.$router.push({ name: 'security-dashboard' });
-      }
-      else {
-        alert('Access denied');
-      }
-    }
+      email,
+      password,
+      role,
+      error,
+      handleLogin
+    };
   }
-}
+};
+
 </script>
 
-<style>
+<style scoped>
 .login-container {
   display: flex;
   justify-content: center;
@@ -102,7 +136,7 @@ button:hover {
   background-color: rgb(240, 120, 80);
 }
 
-label{
+label {
   font-weight: bold;
 }
 
