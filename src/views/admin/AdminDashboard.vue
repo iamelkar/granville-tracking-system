@@ -56,7 +56,7 @@
     data() {
       return {
         users: [],
-        selectedFilter: 'role'
+        selectedFilter: 'latest'
       };
     },
     computed:{
@@ -96,11 +96,11 @@
       },      
       sortUsers() {
         switch(this.selectedFilter){
-          case 'role':
-            this.users.sort((a, b) => a.role.localeCompare(b.role))
-            break;
           case 'latest':
             this.users.sort((a, b) => b.createdAt.seconds - a.createdAt.seconds)
+            break;
+          case 'role':
+            this.users.sort((a, b) => a.role.localeCompare(b.role))
             break;
           case 'first':
             this.users.sort((a, b) => a.createdAt.seconds - b.createdAt.seconds)

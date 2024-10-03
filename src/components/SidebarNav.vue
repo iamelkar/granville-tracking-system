@@ -3,7 +3,7 @@
     <div class="sidebar" @click.self="closeSidebar">
       <!-- Welcome message -->
       <div class="welcome">
-        <h2>Welcome, Admin!</h2>
+        <h2>Welcome!</h2>
       </div>
   
       <!-- Navigation buttons -->
@@ -71,8 +71,15 @@
               <input type="text" v-model="newResident.rfidTag" id="rfidTag" />
             </div>
           </div>
+          <div class="form-group">
+            <label for="activeStatus">Active Status:</label>
+            <select v-model="newResident.activeStatus" id="activeStatus" required>
+              <option value="true">Active</option>
+              <option value="false">Inactive</option>
+            </select>
+          </div>
           <div class="form-actions">
-            <button type="submit">Add Resident</button>
+            <button type="submit">Add User</button>
             <button type="button" @click="closeModal">Cancel</button>
           </div>
         </form>
@@ -100,6 +107,7 @@ export default {
       role: 'resident', // Default role
       address: '',
       rfidTag: '',
+      activeStatus: 'true'
     });
 
     const router = useRouter();
@@ -153,6 +161,7 @@ export default {
           role: newResident.value.role,
           address: newResident.value.role === 'resident' ? newResident.value.address : '',
           rfidTag: newResident.value.role === 'resident' ? newResident.value.rfidTag : '',
+          activeStatus: newResident.value.activeStatus === 'true',
           createdAt: serverTimestamp(), // Use Firestore server timestamp for createdAt
         });
 

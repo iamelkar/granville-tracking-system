@@ -2,7 +2,7 @@
     <div class="sidebar" @click.self="closeSidebar">
       <!-- Welcome message -->
       <div class="welcome">
-        <h2>Welcome, {{firstName}}!</h2>
+        <h2>Welcome!</h2>
       </div>
   
       <!-- Navigation buttons -->
