@@ -8,8 +8,14 @@
         <div class="container">
             <div class="dashboard-grid">
                 <div class="profile">
-                    <h2>My Profile</h2>
-                    <span class="icon">👤</span>
+                    <h2>My Profile 👤</h2>
+                    <div class="profile-info">
+                      <div class="profile-details">
+                        <p><strong>Name:</strong> {{  user.firstName }} {{ user.lastName }}</p>
+                        <p><strong>Role:</strong> {{  user.role }}</p>
+                        <p><strong>Account created:</strong> {{ accountCreated }}</p>
+                      </div>
+                    </div>
                 </div>
                 <br>
                 <div class="system-alerts">
@@ -28,17 +34,60 @@
   </template>
   
   <script>
-import SecuritySidebar from '@/components/securityComp/SecuritySidebar.vue';
-
-
-  // Importing SidebarNav component
+  import SecuritySidebar from '@/components/securityComp/SecuritySidebar.vue'
+  import { ref, onMounted } from 'vue';
+  import { db } from '@/firebase';
+  import { doc, getDoc } from 'firebase/firestore';
+  import { getAuth, onAuthStateChanged } from 'firebase/auth';
   
   export default {
     components: { 
-      SecuritySidebar
-    }
+      SecuritySidebar,
+    },
+    setup() {
+      const user = ref({});
+      const accountCreated = ref('');
+      const auth = getAuth();
+  
+      const fetchUserProfile = async (uid) => {
+        if (uid) {
+          const docRef = doc(db, 'users', uid);
+          const docSnap = await getDoc(docRef);
+  
+          if (docSnap.exists()) {
+            user.value = docSnap.data();
+            // Convert Firestore timestamp to a readable date
+            if (user.value.createdAt) {
+              accountCreated.value = new Date(user.value.createdAt.seconds * 1000).toLocaleDateString();
+            } else {
+              accountCreated.value = "No creation date available";
+            }
+          } else {
+            console.error('User document does not exist');
+          }
+        }
+      };
+  
+      // Use onAuthStateChanged to detect authentication state changes
+      onMounted(() => {
+        onAuthStateChanged(auth, (currentUser) => {
+          if (currentUser) {
+            // Fetch the user profile once we confirm the user is authenticated
+            fetchUserProfile(currentUser.uid);
+          } else {
+            console.error('No user is signed in');
+          }
+        });
+      });
+  
+      return {
+        user,
+        accountCreated,
+      };
+    },
   };
   </script>
+  
   
   <style>
   /* General reset to avoid padding/margin issues */

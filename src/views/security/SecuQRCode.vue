@@ -3,21 +3,19 @@
       <!-- Fixed Sidebar on the left -->
       <SecuritySidebar/>
   
-      <!-- Main content on the right -->
-      <div class="main-content">
-        <h1>WHERE SECURITY GUARDS GENERATE QR</h1>
-        <!-- Add more content here -->
-      </div>
+      <QrCodeGenerate />
     </div>
   </template>
   
   <script>
 import SecuritySidebar from '@/components/securityComp/SecuritySidebar.vue';
+import QrCodeGenerate from '../users/QrCodeGenerate.vue';
 
   
   export default {
     components: { 
-      SecuritySidebar
+      SecuritySidebar,
+      QrCodeGenerate
     }
   };
   </script>

@@ -1,17 +1,19 @@
-import { createRouter, createWebHistory } from 'vue-router'
-import UsersManagement from '@/views/admin/UsersManagement.vue'
-import SecurityLogs from '@/views/admin/SecurityLogs.vue'
-import AdminDashboard from '@/views/admin/AdminDashboard.vue'
-import SystemManagement from '@/views/admin/SystemManagement.vue'
-import UserDashboard from '@/views/users/UserDashboard.vue'
-import QrCodeGenerate from '@/views/users/QrCodeGenerate.vue'
-import MyLogs from '@/views/users/MyLogs.vue'
-import MyNotification from '@/views/users/MyNotification.vue'
-import ContactUs from '@/views/users/ContactUs.vue'
-import LoginView from '../views/LoginView.vue'
-import SecurityDashboard from '@/views/security/SecurityDashboard.vue'
-import SecuQRCode from '@/views/security/SecuQRCode.vue'
-import UserLogs from '@/views/security/UserLogs.vue'
+import { createRouter, createWebHistory } from 'vue-router';
+import UsersManagement from '@/views/admin/UsersManagement.vue';
+import SecurityLogs from '@/views/admin/SecurityLogs.vue';
+import AdminDashboard from '@/views/admin/AdminDashboard.vue';
+import SystemManagement from '@/views/admin/SystemManagement.vue';
+import UserDashboard from '@/views/users/UserDashboard.vue';
+import QrCodeGenerate from '@/views/users/QrCodeGenerate.vue'; // Consolidated QR Code generation
+import MyLogs from '@/views/users/MyLogs.vue';
+import MyNotification from '@/views/users/MyNotification.vue';
+import ContactUs from '@/views/users/ContactUs.vue';
+import LoginView from '../views/LoginView.vue';
+import SecurityDashboard from '@/views/security/SecurityDashboard.vue';
+import UserLogs from '@/views/security/UserLogs.vue';
+import QRCodeManagement from '@/views/users/QRCodeManagement.vue';
+import ViewQRCode from '@/views/ViewQRCode.vue';
+import QRScan from '@/views/QRScan.vue';
 
 const routes = [
   {
@@ -24,7 +26,7 @@ const routes = [
     redirect: '/'
   },
   {
-    path:'/dashboard',
+    path: '/dashboard',
     name: 'dashboard',
     component: AdminDashboard
   },
@@ -49,9 +51,14 @@ const routes = [
     component: UserDashboard,
   },
   {
-    path: '/qrcode-generate',
-    name: 'qrcode-generate',
-    component: QrCodeGenerate,
+    path: '/generate-qr',
+    name: 'generate-qr',
+    component: QrCodeGenerate, // Consolidated path for all roles
+  },
+  {
+    path: '/manage-qr',
+    name: 'manage-qr',
+    component: QRCodeManagement
   },
   {
     path: '/my-logs',
@@ -74,21 +81,25 @@ const routes = [
     component: SecurityDashboard
   },
   {
-    path: '/secu-qrcode-generator',
-    name: 'secu-qrcode-generator',
-    component: SecuQRCode
+    path: '/qr-scan',
+    name: 'qr-scan',
+    component: QRScan
   },
   {
     path: '/user-logs',
     name: 'user-logs',
     component: UserLogs
   },
-
-]
+  {
+    path: '/view-qr/:documentId',
+    name: 'view-qr',
+    component: ViewQRCode
+  }
+];
 
 const router = createRouter({
   history: createWebHistory(process.env.BASE_URL),
   routes
-})
+});
 
-export default router
+export default router;

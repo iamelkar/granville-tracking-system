@@ -21,27 +21,38 @@
         <button type="submit">LOGIN</button>
       </form>
       <p v-if="error" class="error"> {{ error }}</p>
+
+      <!-- Warning modal-->
+       <div v-if="showModal" class="modal">
+        <p> {{  modalMessage }}</p>
+        <button @click="closeModal">OK</button>
+       </div>
     </div>
   </div>
 </template>
 
 <script>
-import { db } from '@/firebase';
-import { getAuth, signInWithEmailAndPassword } from 'firebase/auth';
-import { doc, getDoc } from 'firebase/firestore';
 import { ref } from 'vue';
-import { useRouter } from 'vue-router'; // Import useRouter
+import { auth, db } from '@/firebase';
+import { signInWithEmailAndPassword, signOut } from 'firebase/auth';
+import { doc, getDoc } from 'firebase/firestore';
+import { useRouter } from 'vue-router';
 
 export default {
-  name: 'LoginView',
   setup() {
     const email = ref('');
     const password = ref('');
-    const role = ref('admin'); // Default role
-    const error = ref('');
+    const role = ref('resident'); // Default role
+    const error = ref(null);
+    const showModal = ref(false); // Controls modal visibility
+    const modalMessage = ref(''); // Modal message
 
-    const auth = getAuth();
-    const router = useRouter(); // Get the router instance
+    const router = useRouter();
+
+    // Close modal function
+    const closeModal = () => {
+      showModal.value = false;
+    };
 
     const handleLogin = async () => {
       try {
@@ -59,9 +70,11 @@ export default {
           const userData = userDoc.data();
           console.log('User data:', userData);
 
+          // Check if the role matches
           if (userData.role === role.value) {
             console.log(`Successful "${role.value}" user login`);
-            // Use router.push instead of this.$router.push
+
+            // Redirect based on role
             if (role.value === 'admin') {
               router.push({ name: 'dashboard' });
             } else if (role.value === 'resident') {
@@ -70,15 +83,30 @@ export default {
               router.push({ name: 'security-dashboard' });
             }
           } else {
-            error.value = `Role mismatch! You selected "${role.value}" but your role is "${userData.role}"`;
+            // Role mismatch, show modal and sign the user out
+            modalMessage.value = `Role mismatch! You selected "${role.value}" but your role is "${userData.role}"`;
+            showModal.value = true;
+            await signOut(auth); // Immediately sign the user out if the role doesn't match
           }
         } else {
-          console.error('No user data found in Firestore!');
-          error.value = 'User data not found in Firestore!';
+          // User data not found in Firestore
+          modalMessage.value = 'User data not found in Firestore!';
+          showModal.value = true;
+          await signOut(auth); // Sign out the user since no Firestore data is found
         }
       } catch (err) {
         console.error('Login failed:', err.message);
-        error.value = `Login failed: ${err.message}`;
+
+        // Display appropriate error message
+        if (err.code === 'auth/user-not-found') {
+          modalMessage.value = 'Account does not exist. Please check your email.';
+        } else if (err.code === 'auth/wrong-password') {
+          modalMessage.value = 'Incorrect password. Please try again.';
+        } else {
+          modalMessage.value = `Login failed: ${err.message}`;
+        }
+
+        showModal.value = true;
       }
     };
 
@@ -87,12 +115,15 @@ export default {
       password,
       role,
       error,
-      handleLogin
+      handleLogin,
+      showModal,
+      modalMessage,
+      closeModal,
     };
-  }
+  },
 };
-
 </script>
+
 
 <style scoped>
 .login-container {
@@ -166,5 +197,17 @@ option {
   color: #333;
   background-color: #fff;
   text-align: center;
+}
+
+/* Basic styling for modal */
+.modal {
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  background: white;
+  padding: 20px;
+  border-radius: 8px;
+  box-shadow: 0px 4px 12px rgba(0, 0, 0, 0.1);
 }
 </style>

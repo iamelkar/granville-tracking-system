@@ -12,8 +12,11 @@
             <router-link to="/security-dashboard">Dashboard</router-link>
           </li>
           <li>
-            <router-link to="/secu-qrcode-generator">QR Code Generate</router-link>
+            <router-link to="/generate-qr">QR Code Generate</router-link>
           </li>
+          <li>
+          <router-link to="/qr-scan">QR Code Scanner</router-link> <!-- New Button -->
+        </li>
           <li>
             <router-link to="/user-logs">Logs</router-link>
           </li>
@@ -27,17 +30,32 @@
   </template>
   
   <script>
+  import { auth } from '@/firebase';
+  import { signOut } from 'firebase/auth';
+  import { useRouter } from 'vue-router';
+
   export default {
     // props: ['showSidebar'],
     data(){
         return{
-            firstName: '',
+            firstName: 'Kharhyll',
         }
     },
-    methods: {
-        redirect() {
-            this.$router.push({name: 'home'})
+    setup(){
+      const router = useRouter()
+
+      const handleSignOut = async () => {
+        try{
+          await signOut(auth)
+          router.push({ name: 'home' });
+        } catch(error){
+          console.error('Error signing out:', error);
+          alert(`Error signing out: ${error.message}`);
         }
+      }
+      return{
+        handleSignOut
+      }
     }
   };
   </script>

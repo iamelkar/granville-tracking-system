@@ -12,7 +12,7 @@
             <router-link to="/user-dashboard">Dashboard</router-link>
           </li>
           <li>
-            <router-link to="/qrcode-generate">QR Code Generate</router-link>
+            <router-link to="/generate-qr">QR Code Generate</router-link>
           </li>
           <li>
             <router-link to="/my-logs">Logs</router-link>
@@ -28,12 +28,16 @@
   
       <!-- Add new resident button -->
       <div class="log-out">
-        <button @click="redirect">Log Out</button>
+        <button @click="handleSignOut">Log Out</button>
       </div>
     </div>
   </template>
   
   <script>
+  import { auth } from '@/firebase';
+  import { signOut } from 'firebase/auth';
+  import { useRouter } from 'vue-router';
+
   export default {
     // props: ['showSidebar'],
     data(){
@@ -41,15 +45,26 @@
             firstName: 'Kharhyll',
         }
     },
-    methods: {
-        redirect() {
-            this.$router.push({name: 'home'})
+    setup(){
+      const router = useRouter()
+
+      const handleSignOut = async () => {
+        try{
+          await signOut(auth)
+          router.push({ name: 'home' });
+        } catch(error){
+          console.error('Error signing out:', error);
+          alert(`Error signing out: ${error.message}`);
         }
+      }
+      return{
+        handleSignOut
+      }
     }
   };
   </script>
 
-  <style>
+  <style scoped>
 
   .sidebar {
     width: 300px;
@@ -59,6 +74,7 @@
     display: flex;
     flex-direction: column;
     padding: 20px;
+    align-items: center;
   }
   
   .welcome {
