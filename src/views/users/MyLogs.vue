@@ -5,7 +5,7 @@
   
       <!-- Main content on the right -->
       <div class="main-content">
-        <h1>VIEW USER AND GUEST ENTRY AND EXITS LOGS</h1>
+        <h1>VIEW USER AND GUEST LOGS</h1>
 
         <div v-if="logs.length === 0">
           <p>No scans found for your account</p>
@@ -15,9 +15,10 @@
           <table>
             <thead>
               <tr>
-                <th>Guest Name</th>
+                <th>Name</th>
                 <th>Category</th>
                 <th>Scanned At</th>
+                <th>Details</th>
               </tr>
             </thead>
             <tbody>
@@ -25,6 +26,10 @@
                 <td>{{ log.guestName || 'N/A'}}</td>
                 <td>{{ log.category || 'N/A'}}</td>
                 <td>{{ log.scanTime?.seconds ? new Date(log.scanTime.seconds * 1000).toLocaleString() : 'Unknown' }}</td>
+                <td>
+                  <span v-if="!isAccessDenied(log)" class="access-granted">Access Granted</span>
+                  <span v-else class="access-failed">Access Failed</span>
+                </td>
               </tr>
             </tbody>
           </table>
@@ -36,7 +41,7 @@
   <script>
   import UserSideNav from '@/components/user/UserSideNav.vue';
   import { db, auth } from '@/firebase';
-  import { collection, query, where, getDocs } from 'firebase/firestore';
+  import { collection, query, where, getDocs, doc, getDoc, orderBy } from 'firebase/firestore';
 
   export default {
     components: { 
@@ -44,9 +49,49 @@
     },
     data(){
       return{
-        logs: []
+        logs: [],
+        expirationTimes: {}
       }
     },
+    methods:{
+      // Function to fetch expiration time for each QR code
+      async fetchExpirationTimes(logs) {
+        const expirationTimes = {}
+
+        for (const log of logs) {
+          if (log.scanData) { // Ensure log has valid scanData
+          try {
+            const qrCodeDocRef = doc(db, 'guest_qrcodes', log.scanData)
+            const qrCodeDoc = await getDoc(qrCodeDocRef)
+
+            if (qrCodeDoc.exists()) {
+              expirationTimes[log.scanData] = qrCodeDoc.data().expirationTime
+            } else {
+              console.error(`No QR code document found for ID: ${log.scanData}`)
+            }
+          } catch (error) {
+              console.error('Error fetching expiration time:', error)
+            }
+          }
+        }
+
+        this.expirationTimes = expirationTimes;
+      },
+
+      // Compare scanTime and expirationTime
+      isAccessDenied(log) {
+        const expirationTime = this.expirationTimes[log.scanData] // Use log.scanData as the key
+        if (!expirationTime || !log.scanTime?.seconds) {
+          return true
+        }
+
+        const scanTimeMs = log.scanTime.seconds * 1000
+        const expirationTimeMs = expirationTime.seconds * 1000
+
+        // Return true if the scanTime is greater than the expirationTime (i.e., scan happened after expiration)
+        return scanTimeMs > expirationTimeMs
+      },
+    },  
     async created(){
       // Get the current logged in user
       const currentUser = auth.currentUser
@@ -56,11 +101,17 @@
           // Query Firestore for the logs where the current user created the QR code
           const logsQuery = query(
             collection(db, 'qr_scan_logs'),
-            where('qrCodeCreator', '==', currentUser.email)
+            where('qrCodeCreator', '==', currentUser.email),
+            orderBy('scanTime', 'desc')
           )
 
           const querySnapshot = await getDocs(logsQuery)
-          this.logs = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data()}))
+          const logs = querySnapshot.docs.map((doc) => ({ id: doc.id, ...doc.data() }))
+
+          this.logs = logs
+
+          // Fetch expiration times for each QR code in the logs
+          await this.fetchExpirationTimes(logs)
         }
         catch(error){
           console.error('Error fetching logs:', error);
@@ -74,6 +125,17 @@
   </script>
   
   <style>
+
+  .access-granted {
+    color: green;
+    font-weight: bold;
+  }
+
+  .access-failed {
+    color: red;
+    font-weight: bold;
+  }
+
   /* General reset to avoid padding/margin issues */
   * {
     margin: 0;

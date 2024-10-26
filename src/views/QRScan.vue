@@ -39,6 +39,7 @@
       const scannedData = ref('')
       const showModal = ref(false)
       const modalMessage = ref('')
+      const isProcessingScan = ref(false)
       let qrScannerInstance = null
   
       // Function to close the modal
@@ -79,6 +80,8 @@
             await addDoc(collection(db, 'qr_scan_logs'), {
               scannedBy: currentUser.email,
               qrCodeCreator: qrCodeCreator,
+              guestName: qrCodeData.guestName,
+              category: qrCodeData.category,
               scanData: decodedText,
               scanTime: serverTimestamp()
           })
@@ -104,11 +107,24 @@
   
         qrScannerInstance.render(
           async (decodedText) => {
+            // Check if a scan is already being processed
+            if (isProcessingScan.value) return
+
+            // Set the debounce flag to true
+            isProcessingScan.value = true
+
             // This function gets called when a QR code is successfully scanned
             console.log(`QR Code scanned: ${decodedText}`);
             scannedData.value = decodedText;
+
             await logScanToFirestore(decodedText)
+
             qrScannerInstance.clear(); // Stop scanning after successful scan
+
+            // reset the debounce flag after a short delay
+            setTimeout(() => {
+              isProcessingScan.value = false
+            }, 2000)
           },
           (errorMessage) => {
             console.error(`QR Code scanning failed: ${errorMessage}`);

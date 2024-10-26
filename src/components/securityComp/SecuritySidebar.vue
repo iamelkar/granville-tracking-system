@@ -24,7 +24,7 @@
       </nav>
   
       <div class="log-out">
-        <button @click="redirect">Log Out</button>
+        <button @click="handleSignOut">Log Out</button>
       </div>
     </div>
   </template>

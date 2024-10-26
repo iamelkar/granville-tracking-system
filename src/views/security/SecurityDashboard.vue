@@ -14,6 +14,7 @@
                         <p><strong>Name:</strong> {{  user.firstName }} {{ user.lastName }}</p>
                         <p><strong>Role:</strong> {{  user.role }}</p>
                         <p><strong>Account created:</strong> {{ accountCreated }}</p>
+                        <p><strong>Email:</strong> {{ user.email }}</p>
                       </div>
                     </div>
                 </div>
