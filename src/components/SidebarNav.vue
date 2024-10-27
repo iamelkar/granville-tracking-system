@@ -5,7 +5,7 @@
       <div class="welcome">
         <h2>Welcome!</h2>
       </div>
-  
+
       <!-- Navigation buttons -->
       <nav class="nav">
         <ul>
@@ -23,11 +23,11 @@
           </li>
         </ul>
       </nav>
-  
+
       <!-- Add new resident button -->
       <div class="add-resident">
         <button @click="openModal" id="addRes">Add A New User</button>
-        <br><br>
+        <br /><br />
         <button @click="handleSignOut">Log Out</button>
       </div>
     </div>
@@ -36,22 +36,38 @@
     <div v-if="showModal" class="modal-overlay">
       <div class="modal">
         <h2>Add New User</h2>
-        <form @submit.prevent="addResident">
+        <form @submit.prevent="addResident" class="modal-content">
+          <div class="form-group">
+            <label for="uid">User UID:</label>
+            <input type="text" v-model="newResident.uid" id="uid" required />
+          </div>
+
           <div class="form-group">
             <label for="firstName">First Name:</label>
-            <input type="text" v-model="newResident.firstName" id="firstName" required />
+            <input
+              type="text"
+              v-model="newResident.firstName"
+              id="firstName"
+              required
+            />
           </div>
           <div class="form-group">
             <label for="lastName">Last Name:</label>
-            <input type="text" v-model="newResident.lastName" id="lastName" required />
+            <input
+              type="text"
+              v-model="newResident.lastName"
+              id="lastName"
+              required
+            />
           </div>
           <div class="form-group">
             <label for="email">Email:</label>
-            <input type="email" v-model="newResident.email" id="email" required />
-          </div>
-          <div class="form-group">
-            <label for="password">Password:</label>
-            <input type="password" v-model="newResident.password" id="password" required />
+            <input
+              type="email"
+              v-model="newResident.email"
+              id="email"
+              required
+            />
           </div>
           <div class="form-group">
             <label for="role">Role:</label>
@@ -61,19 +77,121 @@
               <option value="admin">Admin</option>
             </select>
           </div>
+
+          <!-- Resident Specific Fields -->
           <div v-if="newResident.role === 'resident'">
+            <!-- Address Fields -->
             <div class="form-group">
-              <label for="address">Address:</label>
-              <input type="text" v-model="newResident.address" id="address" required />
+              <label for="phase">Phase:</label>
+              <input
+                type="text"
+                v-model="newResident.phase"
+                id="phase"
+                required
+              />
             </div>
+            <div class="form-group">
+              <label for="street">Street:</label>
+              <input
+                type="text"
+                v-model="newResident.street"
+                id="street"
+                required
+              />
+            </div>
+            <div class="form-group">
+              <label for="houseLotNumber">House Lot & Block Number:</label>
+              <input
+                type="text"
+                v-model="newResident.houseLotNumber"
+                id="houseLotNumber"
+                required
+              />
+            </div>
+
+            <!-- Car Plate Number Array -->
+            <div class="form-group">
+              <label for="carPlateNumber">Car Plate Number(s):</label>
+              <div class="car-plate-input">
+                <input
+                  type="text"
+                  v-model="carPlateInput"
+                  placeholder="Enter car plate number"
+                />
+                <button type="button" @click="addCarPlate">Add</button>
+              </div>
+              <ul>
+                <li
+                  v-for="(plate, index) in newResident.carPlateNumbers"
+                  :key="index"
+                >
+                  {{ plate }}
+                  <button @click="removeCarPlate(index)">Remove</button>
+                </li>
+              </ul>
+            </div>
+
+            <!-- Additional Fields -->
+            <div class="form-group">
+              <label for="vehicleType">Vehicle Type:</label>
+              <input
+                type="text"
+                v-model="newResident.vehicleType"
+                id="vehicleType"
+              />
+            </div>
+            <div class="form-group">
+              <label for="civilStatus">Civil Status:</label>
+              <select
+                v-model="newResident.civilStatus"
+                id="civilStatus"
+                required
+              >
+                <option value="single">Single</option>
+                <option value="married">Married</option>
+                <option value="separated">Separated</option>
+                <option value="widowed">Widowed</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label for="numberOfChildren">Number of Children:</label>
+              <input
+                type="number"
+                v-model="newResident.numberOfChildren"
+                id="numberOfChildren"
+                min="0"
+              />
+            </div>
+            <div class="form-group">
+              <label for="contactNumber">Contact Number:</label>
+              <input
+                type="text"
+                v-model="newResident.contactNumber"
+                id="contactNumber"
+                required
+              />
+            </div>
+
+            <!-- RFID Tag Selection -->
             <div class="form-group">
               <label for="rfidTag">RFID Tag:</label>
-              <input type="text" v-model="newResident.rfidTag" id="rfidTag" />
+              <select v-model="newResident.rfidTag" id="rfidTag" required>
+                <option value="" disabled>Select an unassigned RFID tag</option>
+                <option v-for="tag in rfidTags" :key="tag.id" :value="tag.tag">
+                  {{ tag.tag }}
+                </option>
+              </select>
             </div>
           </div>
+
+          <!-- Active Status -->
           <div class="form-group">
             <label for="activeStatus">Active Status:</label>
-            <select v-model="newResident.activeStatus" id="activeStatus" required>
+            <select
+              v-model="newResident.activeStatus"
+              id="activeStatus"
+              required
+            >
               <option value="true">Active</option>
               <option value="false">Inactive</option>
             </select>
@@ -89,25 +207,46 @@
 </template>
 
 <script>
-import { db, auth } from '@/firebase';
-import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut } from 'firebase/auth';
-import { collection, doc, setDoc, serverTimestamp, query, where, getDocs } from 'firebase/firestore';
-import { ref } from 'vue';
-import { useRouter } from 'vue-router';
+import { db, auth } from "@/firebase";
+import { signOut, onAuthStateChanged } from "firebase/auth";
+import {
+  collection,
+  doc,
+  setDoc,
+  serverTimestamp,
+  query,
+  where,
+  getDocs,
+  updateDoc,
+  onSnapshot,
+} from "firebase/firestore";
+import { ref, onMounted, computed, onUnmounted } from "vue";
+import { useRouter } from "vue-router";
 
 export default {
-  name: 'SidebarNav',
+  name: "SidebarNav",
   setup() {
     const showModal = ref(false);
+    const rfidTags = ref([]);
+    const carPlateInput = ref(""); // Input for individual car plate number
+    const unsubscribe = ref(null);
     const newResident = ref({
-      firstName: '',
-      lastName: '',
-      email: '', // Add email field
-      password: '', // Add password field
-      role: 'resident', // Default role
-      address: '',
-      rfidTag: '',
-      activeStatus: 'true'
+      uid: "",
+      firstName: "",
+      lastName: "",
+      email: "",
+      password: "",
+      role: "resident",
+      phase: "",
+      street: "",
+      houseLotNumber: "",
+      carPlateNumbers: [], // Array for car plate numbers
+      vehicleType: "",
+      civilStatus: "",
+      numberOfChildren: 0,
+      contactNumber: "",
+      rfidTag: "",
+      activeStatus: "true",
     });
 
     const router = useRouter();
@@ -120,84 +259,141 @@ export default {
       showModal.value = false;
     };
 
+    const setupListener = () => {
+      const unassignedTagsQuery = query(
+        collection(db, "residents"),
+        where("assigned", "==", false)
+      );
+
+      unsubscribe.value = onSnapshot(unassignedTagsQuery, (snapshot) => {
+        rfidTags.value = snapshot.docs.map((doc) => ({
+          id: doc.id,
+          tag: doc.id,
+        }));
+      });
+    };
+
+    const cleanupListener = () => {
+      if (unsubscribe.value) {
+        unsubscribe.value();
+        unsubscribe.value = null;
+      }
+    };
+
+    // const fetchUnassignedRfidTags = async () => {
+    //   const unassignedTagsQuery = query(
+    //     collection(db, "residents"),
+    //     where("assigned", "==", false)
+    //   );
+
+    //   const querySnapshot = await getDocs(unassignedTagsQuery);
+    //   rfidTags.value = querySnapshot.docs.map((doc) => ({
+    //     id: doc.id,
+    //     tag: doc.id,
+    //   }));
+    // };
+
+    const addCarPlate = () => {
+      if (carPlateInput.value.trim()) {
+        newResident.value.carPlateNumbers.push(carPlateInput.value.trim());
+        carPlateInput.value = "";
+      }
+    };
+
+    const removeCarPlate = (index) => {
+      newResident.value.carPlateNumbers.splice(index, 1);
+    };
+
     const addResident = async () => {
-      try { 
-        if (newResident.value.rfidTag) {
-          const rfidQuery = query(
-            collection(db, 'users'),
-            where('rfidTag', '==', newResident.value.rfidTag)
-          );
-
-          const querySnapshot = await getDocs(rfidQuery);
-
-          if (!querySnapshot.empty) {
-            alert('This RFID tag is already in use. Please use a different RFID tag.');
-            return;
-          }
+      try {
+        if (!newResident.value.uid) {
+          alert("Please enter the UID for the new user.");
+          return;
         }
 
-        // const auth = getAuth();
-        const currentEmail = auth.currentUser.email
-        const adminPassword = prompt("Please re-enter your password to continue")
-
-        if(!adminPassword){
-          throw new Error("Admin password is required to add a new user.")
-        }
-
-        // Create the new user in Firebase Authentication
-        const userCredential = await createUserWithEmailAndPassword(
-          auth,
-          newResident.value.email,
-          newResident.value.password
+        // Check if RFID tag already exists in the users collection
+        const rfidQuery = query(
+          collection(db, "users"),
+          where("rfidTag", "==", newResident.value.rfidTag)
         );
+        const rfidQuerySnapshot = await getDocs(rfidQuery);
 
-        const user = userCredential.user;
+        if (!rfidQuerySnapshot.empty) {
+          alert(
+            "This RFID tag is already assigned to another user. Please select a different RFID tag."
+          );
+          return; // Exit if the RFID tag is already in use
+        }
 
-        // Store additional user information in Firestore
-        await setDoc(doc(db, 'users', user.uid), {
+        await setDoc(doc(db, "users", newResident.value.uid), {
           firstName: newResident.value.firstName,
           lastName: newResident.value.lastName,
           email: newResident.value.email,
           role: newResident.value.role,
-          address: newResident.value.role === 'resident' ? newResident.value.address : '',
-          rfidTag: newResident.value.role === 'resident' ? newResident.value.rfidTag : '',
-          activeStatus: newResident.value.activeStatus === 'true',
-          createdAt: serverTimestamp(), // Use Firestore server timestamp for createdAt
+          phase: newResident.value.phase,
+          street: newResident.value.street,
+          houseLotNumber: newResident.value.houseLotNumber,
+          carPlateNumbers: newResident.value.carPlateNumbers,
+          vehicleType: newResident.value.vehicleType,
+          civilStatus: newResident.value.civilStatus,
+          numberOfChildren: newResident.value.numberOfChildren,
+          contactNumber: newResident.value.contactNumber,
+          rfidTag: newResident.value.rfidTag,
+          activeStatus: newResident.value.activeStatus === "true",
+          createdAt: serverTimestamp(),
         });
 
-        alert('User added successfully!');
+        // Mark the RFID as assigned
+        await updateDoc(doc(db, "residents", newResident.value.rfidTag), {
+          assigned: true,
+        });
 
-        // Sign out the new user
-        await auth.signOut()
+        alert("User information added successfully!");
 
-        // Re-authenticate the admin
-        await signInWithEmailAndPassword(auth, currentEmail, adminPassword)
-        console.log('admin re-authenticated')
-
-        closeModal();
+        // Refresh the page to clear the form
+        window.location.reload();
       } catch (error) {
-        console.error('Error adding user:', error);
-        alert(`Error adding user: ${error.message}`)
+        console.error("Error adding user:", error);
+        alert(`Error adding user: ${error.message}`);
       }
     };
 
     const handleSignOut = async () => {
-      try{
-        await signOut(auth)
-        router.push({ name: 'home' });
-      } catch(error){
-        console.error('Error signing out:', error);
+      try {
+        cleanupListener();
+        await signOut(auth);
+        router.push({ name: "home" });
+        console.log("Successful sign out");
+      } catch (error) {
+        console.error("Error signing out:", error);
         alert(`Error signing out: ${error.message}`);
       }
     };
 
+    onMounted(() => {
+      setupListener();
+      onAuthStateChanged(auth, (user) => {
+        if (!user) {
+          cleanupListener();
+        }
+      });
+    });
+
+    onUnmounted(() => {
+      cleanupListener();
+    });
+
     return {
       showModal,
       newResident,
+      rfidTags,
+      carPlateInput,
       openModal,
       closeModal,
+      addCarPlate,
+      removeCarPlate,
       addResident,
-      handleSignOut
+      handleSignOut,
     };
   },
 };
@@ -301,9 +497,17 @@ export default {
   background-color: #fff;
   padding: 20px;
   border-radius: 8px;
-  width: 400px;
-  max-width: 100%;
+  width: 90%;
+  max-width: 500px;
+  max-height: 90vh;
+  overflow-y: auto;
   box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+}
+
+.modal-content {
+  display: flex;
+  flex-direction: column;
+  gap: 15px;
 }
 
 .form-group {
@@ -324,9 +528,15 @@ export default {
   border-radius: 4px;
 }
 
+.car-plate-input {
+  display: flex;
+  gap: 5px;
+}
+
 .form-actions {
   display: flex;
   justify-content: space-between;
+  margin-top: 20px;
 }
 
 .form-actions button {

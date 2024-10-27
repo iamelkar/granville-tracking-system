@@ -1,21 +1,44 @@
 <template>
-    <div>
-      <!-- Fixed Sidebar on the left -->
-      <SidebarNav />
-  
-      <!-- Main content on the right -->
-      <div class="main-content">
-        <div class="user-management-content">
-          
-          <div class="role-menu">
-            <button :class="{active: currentRoleFilter === 'all'}" @click="filterByRole('all')">All Users</button>
-            <button :class="{active: currentRoleFilter === 'resident'}" @click="filterByRole('resident')">Residents</button>
-            <button :class="{active: currentRoleFilter === 'security'}" @click="filterByRole('security')">Security</button>
-            <button :class="{active: currentRoleFilter === 'admin'}" @click="filterByRole('admin')">Admin</button>
-          </div>
+  <div>
+    <!-- Fixed Sidebar on the left -->
+    <SidebarNav />
+
+    <!-- Main content on the right -->
+    <div class="main-content">
+      <div class="user-management-content">
+        <div class="role-menu">
+          <button
+            :class="{ active: currentRoleFilter === 'all' }"
+            @click="filterByRole('all')"
+          >
+            All Users
+          </button>
+          <button
+            :class="{ active: currentRoleFilter === 'resident' }"
+            @click="filterByRole('resident')"
+          >
+            Residents
+          </button>
+          <button
+            :class="{ active: currentRoleFilter === 'security' }"
+            @click="filterByRole('security')"
+          >
+            Security
+          </button>
+          <button
+            :class="{ active: currentRoleFilter === 'admin' }"
+            @click="filterByRole('admin')"
+          >
+            Admin
+          </button>
+        </div>
 
         <div class="search-filter">
-          <input v-model="searchQuery" type="text" placeholder="Search by full name..." />
+          <input
+            v-model="searchQuery"
+            type="text"
+            placeholder="Search by full name or RFID tag..."
+          />
 
           <select v-model="selectedFilter" @change="sortUsers">
             <option value="alphabetical">Sort by Name (A-Z)</option>
@@ -30,6 +53,7 @@
               <tr>
                 <th>Full Name</th>
                 <th>Role</th>
+                <th>RFID Tag</th>
                 <th>Actions</th>
               </tr>
             </thead>
@@ -37,6 +61,7 @@
               <tr v-for="user in filteredUsers" :key="user.id">
                 <td class="info">{{ user.firstName }} {{ user.lastName }}</td>
                 <td class="info">{{ user.role }}</td>
+                <td class="info">{{ user.rfidTag }}</td>
                 <td>
                   <button @click="openEditModal(user)">Edit</button>
                   <button @click="deleteUser(user.id)">Delete</button>
@@ -53,11 +78,21 @@
             <form @submit.prevent="updateUser">
               <div class="form-group">
                 <label for="firstName">First Name:</label>
-                <input type="text" v-model="selectedUser.firstName" id="firstName" required />
+                <input
+                  type="text"
+                  v-model="selectedUser.firstName"
+                  id="firstName"
+                  required
+                />
               </div>
               <div class="form-group">
                 <label for="lastName">Last Name:</label>
-                <input type="text" v-model="selectedUser.lastName" id="lastName" required />
+                <input
+                  type="text"
+                  v-model="selectedUser.lastName"
+                  id="lastName"
+                  required
+                />
               </div>
               <div class="form-group">
                 <label for="role">Role:</label>
@@ -69,181 +104,211 @@
               </div>
               <div class="form-group">
                 <label for="address">Address:</label>
-                <input type="text" v-model="selectedUser.address" id="address" required />
+                <input
+                  type="text"
+                  v-model="selectedUser.address"
+                  id="address"
+                  required
+                />
               </div>
               <div class="form-group">
                 <label for="activeStatus">Active Status:</label>
-                <select v-model="selectedUser.activeStatus" id="activeStatus" required>
+                <select
+                  v-model="selectedUser.activeStatus"
+                  id="activeStatus"
+                  required
+                >
                   <option value="true">Active</option>
                   <option value="false">Inactive</option>
                 </select>
               </div>
               <div class="form-actions">
                 <button class="update-btn" type="submit">Update User</button>
-                <button class="cancel-btn" type="button" @click="closeEditModal">Cancel</button>
+                <button
+                  class="cancel-btn"
+                  type="button"
+                  @click="closeEditModal"
+                >
+                  Cancel
+                </button>
               </div>
             </form>
-            <br>
-            <br>
+            <br />
+            <br />
             <h3>Reset User Password</h3>
-            <button class="reset-btn" @click="resetPassword(selectedUser.email)">Send Password Reset Email</button>
+            <button
+              class="reset-btn"
+              @click="resetPassword(selectedUser.email)"
+            >
+              Send Password Reset Email
+            </button>
           </div>
         </div>
-
-      </div>
       </div>
     </div>
-  </template>
-  
-  <script>
-  import SidebarNav from '@/components/SidebarNav.vue';
-  import { db, auth } from '@/firebase';
-  import { sendPasswordResetEmail } from 'firebase/auth';
-  import { collection, getDocs, doc, updateDoc, deleteDoc } from 'firebase/firestore';
-  import { ref, computed } from 'vue';
+  </div>
+</template>
 
-  export default {
-    components: {
-      SidebarNav,
-    },
-    setup() {
-      const users = ref([])
-      const searchQuery = ref('')
-      const selectedFilter = ref('alphabetical')
-      const currentRoleFilter = ref('all')
-      const showEditModal = ref(false)
-      const selectedUser = ref(null)
+<script>
+import SidebarNav from "@/components/SidebarNav.vue";
+import { db, auth } from "@/firebase";
+import { sendPasswordResetEmail } from "firebase/auth";
+import {
+  collection,
+  getDocs,
+  doc,
+  updateDoc,
+  deleteDoc,
+} from "firebase/firestore";
+import { ref, computed } from "vue";
 
-      // Fetch users from Firestore
-      const fetchUsers = async () => {
-        try {
-          const querySnapshot = await getDocs(collection(db, 'users'));
-          users.value = querySnapshot.docs.map((doc) => ({
-            id: doc.id,
-            ...doc.data(),
-          }))
-        } catch (error) {
-          console.error('Error fetching users:', error)
-        }
+export default {
+  components: {
+    SidebarNav,
+  },
+  setup() {
+    const users = ref([]);
+    const searchQuery = ref("");
+    const selectedFilter = ref("alphabetical");
+    const currentRoleFilter = ref("all");
+    const showEditModal = ref(false);
+    const selectedUser = ref(null);
+
+    // Fetch users from Firestore
+    const fetchUsers = async () => {
+      try {
+        const querySnapshot = await getDocs(collection(db, "users"));
+        users.value = querySnapshot.docs.map((doc) => ({
+          id: doc.id,
+          ...doc.data(),
+        }));
+      } catch (error) {
+        console.error("Error fetching users:", error);
       }
+    };
 
-      // Run fetchUsers on created
-      fetchUsers()
+    // Run fetchUsers on created
+    fetchUsers();
+
+    // Filter by role
+    const filterByRole = (role) => {
+      currentRoleFilter.value = role;
+    };
+
+    // Computed filtered and sorted users
+    const filteredUsers = computed(() => {
+      let result = users.value;
+
+      // Search by full name
+      if (searchQuery.value) {
+        result = result.filter(
+          (user) =>
+            `${user.firstName} ${user.lastName}`
+              .toLowerCase()
+              .includes(searchQuery.value.toLowerCase()) ||
+            `${user.rfidTag}`
+              .toLowerCase()
+              .includes(searchQuery.value.toLowerCase())
+        );
+      }
 
       // Filter by role
-      const filterByRole = (role) => {
-        currentRoleFilter.value = role;
+      if (currentRoleFilter.value !== "all") {
+        result = result.filter((user) => user.role === currentRoleFilter.value);
       }
 
-      // Computed filtered and sorted users
-      const filteredUsers = computed(() => {
-        let result = users.value
-
-        // Search by full name
-        if (searchQuery.value) {
-          result = result.filter((user) =>
-          `${user.firstName} ${user.lastName}`
-          .toLowerCase()
-          .includes(searchQuery.value.toLowerCase()))
-        }
-
-        // Filter by role
-        if (currentRoleFilter.value !== 'all') {
-          result = result.filter((user) => user.role === currentRoleFilter.value);
-        }
-
-        // Sort users
-        if (selectedFilter.value === 'alphabetical') {
-          result.sort((a, b) => a.firstName.localeCompare(b.firstName));
-        } else if (selectedFilter.value === 'latest') {
-          result.sort((a, b) => b.createdAt.seconds - a.createdAt.seconds);
-        } else if (selectedFilter.value === 'first') {
-          result.sort((a, b) => a.createdAt.seconds - b.createdAt.seconds);
-        }
-
-        return result;
-      });
-
-      // Open Edit Modal
-      const openEditModal = (user) => {
-        selectedUser.value = {...user}
-        showEditModal.value = true
+      // Sort users
+      if (selectedFilter.value === "alphabetical") {
+        result.sort((a, b) => a.firstName.localeCompare(b.firstName));
+      } else if (selectedFilter.value === "latest") {
+        result.sort((a, b) => b.createdAt.seconds - a.createdAt.seconds);
+      } else if (selectedFilter.value === "first") {
+        result.sort((a, b) => a.createdAt.seconds - b.createdAt.seconds);
       }
 
-      // Close Edit Modal
-      const closeEditModal = () => {
-        showEditModal.value = false
-        selectedUser.value = null
+      return result;
+    });
+
+    // Open Edit Modal
+    const openEditModal = (user) => {
+      selectedUser.value = { ...user };
+      showEditModal.value = true;
+    };
+
+    // Close Edit Modal
+    const closeEditModal = () => {
+      showEditModal.value = false;
+      selectedUser.value = null;
+    };
+
+    // Update user in Firestore
+    const updateUser = async () => {
+      if (!selectedUser.value) return;
+      const userRef = doc(db, "users", selectedUser.value.id);
+      try {
+        await updateDoc(userRef, {
+          firstName: selectedUser.value.firstName,
+          lastName: selectedUser.value.lastName,
+          role: selectedUser.value.role,
+          address: selectedUser.value.address,
+          activeStatus: selectedUser.value.activeStatus === "true",
+        });
+        alert("User updated successfully!");
+        closeEditModal();
+        fetchUsers();
+      } catch (error) {
+        console.error("Error updating user", error);
       }
+    };
 
-      // Update user in Firestore
-      const updateUser = async () => {
-        if(!selectedUser.value) return;
-        const userRef = doc(db, 'users', selectedUser.value.id)
-        try {
-          await updateDoc(userRef, {
-            firstName: selectedUser.value.firstName,
-            lastName: selectedUser.value.lastName,
-            role: selectedUser.value.role,
-            address: selectedUser.value.address,
-            activeStatus: selectedUser.value.activeStatus === 'true'
-          })
-          alert('User updated successfully!')
-          closeEditModal()
-          fetchUsers()
-        } catch(error){
-          console.error('Error updating user', error)
-        }
+    // Reset Password for the user
+    const resetPassword = async (email) => {
+      try {
+        await sendPasswordResetEmail(auth, email);
+        alert("Password reset request sent successfully!");
+      } catch (error) {
+        console.error("Error sending password reset email:", error);
       }
+    };
 
-      // Reset Password for the user
-      const resetPassword = async (email) => {
-        try{
-          await sendPasswordResetEmail(auth, email)
-          alert('Password reset request sent successfully!')
-        } catch (error){
-          console.error('Error sending password reset email:', error)
-        }
+    // Edit user action
+    const editUser = (user) => {
+      console.log("Edit user", user);
+      // Handle edit action (e.g., navigate to edit page or show modal)
+    };
+
+    // Delete user action
+    const deleteUser = async (userId) => {
+      try {
+        await deleteDoc(doc(db, "users", userId));
+        fetchUsers(); // Refresh user list after deletion
+        alert("User deleted successfully");
+      } catch (error) {
+        console.error("Error deleting user:", error);
       }
+    };
 
-      // Edit user action
-      const editUser = (user) => {
-        console.log('Edit user', user);
-        // Handle edit action (e.g., navigate to edit page or show modal)
-      };
+    return {
+      users,
+      searchQuery,
+      selectedFilter,
+      currentRoleFilter,
+      filteredUsers,
+      showEditModal,
+      selectedUser,
+      filterByRole,
+      openEditModal,
+      closeEditModal,
+      updateUser,
+      resetPassword,
+      editUser,
+      deleteUser,
+    };
+  },
+};
+</script>
 
-      // Delete user action
-      const deleteUser = async (userId) => {
-        try {
-          await deleteDoc(doc(db, 'users', userId));
-          fetchUsers(); // Refresh user list after deletion
-          alert('User deleted successfully');
-        } catch (error) {
-          console.error('Error deleting user:', error);
-        }
-      };
-
-      return {
-        users,
-        searchQuery,
-        selectedFilter,
-        currentRoleFilter,
-        filteredUsers,
-        showEditModal,
-        selectedUser,
-        filterByRole,
-        openEditModal,
-        closeEditModal,
-        updateUser,
-        resetPassword,
-        editUser,
-        deleteUser,
-      };
-    },
-  };
-  </script>
-  
-  <style scoped>
+<style scoped>
 /* Sidebar and main content styles */
 .main-content {
   margin-left: 250px; /* Adjust based on sidebar width */
@@ -260,7 +325,7 @@
   box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
 }
 
-.modal-overlay{
+.modal-overlay {
   position: fixed;
   top: 0;
   left: 0;
@@ -376,7 +441,7 @@
 
 .search-filter input {
   padding: 5px;
-  width: 200px;
+  width: 300px;
 }
 
 .search-filter select {
@@ -422,4 +487,3 @@
   opacity: 0.8;
 }
 </style>
-  
