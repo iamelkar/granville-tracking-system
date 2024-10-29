@@ -23,28 +23,37 @@
           </div>
           <br />
           <div class="system-alerts">
-            <h2>System Alerts</h2>
-            <span class="icon">⚠️</span>
+            <h2>Gate Exits ⚠️</h2>
+            <div v-if="showExitModal" class="modal-content-exit">
+              <h2>Exited</h2>
+              <br />
+              <img
+                :src="exitProfilePic"
+                alt="Profile Picture"
+                class="profile-pic-exit"
+              />
+              <p><strong>Resident Name:</strong> {{ exitResidentName }}</p>
+              <p><strong>Phase:</strong> {{ exitResidentPhase }}</p>
+              <button @click="closeExitModal">Close</button>
+            </div>
           </div>
         </div>
 
         <div class="recent-activities">
-          <h2>Gate Logs</h2>
-          <span class="icon">📊</span>
+          <h2>Gate Entries 📊</h2>
+          <div v-if="showEntryGrantedModal" class="modal-content">
+            <h2>Entry Granted</h2>
+            <br />
+            <img
+              :src="residentProfilePic"
+              alt="Profile Picture"
+              class="profile-pic"
+            />
+            <p><strong>Resident Name:</strong> {{ residentName }}</p>
+            <p><strong>Phase:</strong> {{ residentPhase }}</p>
+            <button @click="closeEntryModal">Close</button>
+          </div>
         </div>
-      </div>
-    </div>
-
-    <div v-if="showEntryGrantedModal" class="modal-overlay">
-      <div class="modal">
-        <h2>Entry Granted</h2>
-        <img
-          :src="residentProfilePic"
-          alt="Profile Picture"
-          class="profile-pic"
-        />
-        <p><strong>Resident Name:</strong> {{ residentName }}</p>
-        <button @click="closeModal">Close</button>
       </div>
     </div>
   </div>
@@ -78,12 +87,20 @@ export default {
     const user = ref({});
     const accountCreated = ref("");
     const auth = getAuth();
+    const storage = getStorage();
     const showEntryGrantedModal = ref(false);
     const residentName = ref("");
+    const residentPhase = ref("");
     const residentProfilePic = ref("");
-    const storage = getStorage();
 
-    let initialized = false;
+    // Separate state variables for exit modal
+    const showExitModal = ref(false);
+    const exitResidentName = ref("");
+    const exitResidentPhase = ref("");
+    const exitProfilePic = ref("");
+
+    let initializedEntries = false;
+    let initializedExits = false;
 
     const fetchUserProfile = async (uid) => {
       if (uid) {
@@ -126,9 +143,9 @@ export default {
       );
 
       onSnapshot(acceptedEntriesQuery, async (snapshot) => {
-        if (!initialized) {
+        if (!initializedEntries) {
           // Skip the initial load, only set initialized to true
-          initialized = true;
+          initializedEntries = true;
           return;
         }
         snapshot.docChanges().forEach(async (change) => {
@@ -153,6 +170,7 @@ export default {
                   residentProfilePic.value = await getProfilePictureUrl(
                     userSnapshot.docs[0].id
                   );
+                  residentPhase.value = `${userDoc.phase}`;
 
                   showEntryGrantedModal.value = true;
                   console.log("Modal should show now");
@@ -170,8 +188,65 @@ export default {
       });
     };
 
-    const closeModal = () => {
+    const listenForExits = () => {
+      console.log("Listening for exits...");
+
+      const acceptedExits = query(
+        collection(db, "latest_exit_log"),
+        where("status", "==", "accepted")
+      );
+
+      onSnapshot(acceptedExits, async (snapshot) => {
+        if (!initializedExits) {
+          initializedExits = true;
+          return;
+        }
+
+        snapshot.docChanges().forEach(async (change) => {
+          if (change.type == "modified" || change.type == "added") {
+            const exit = change.doc.data();
+
+            if (exit && exit.rfidTag) {
+              try {
+                // Query the users collection for the matching rfidTag
+                const userQuery = query(
+                  collection(db, "users"),
+                  where("rfidTag", "==", exit.rfidTag)
+                );
+
+                const userSnapshot = await getDocs(userQuery);
+
+                if (!userSnapshot.empty) {
+                  const userDoc = userSnapshot.docs[0].data();
+
+                  exitResidentName.value = `${userDoc.firstName} ${userDoc.lastName}`;
+                  exitProfilePic.value = await getProfilePictureUrl(
+                    userSnapshot.docs[0].id
+                  );
+                  exitResidentPhase.value = `${userDoc.phase}`;
+
+                  showExitModal.value = true;
+                  console.log("Exit should show now");
+                } else {
+                  console.warn(`No user found with RFID tag: ${entry.rfidTag}`);
+                }
+              } catch (error) {
+                console.error("Error fetching user document:", error);
+              }
+            }
+          } else {
+            console.warn("rfidTag is undefined in entry:", entry);
+          }
+        });
+      });
+    };
+
+    const closeEntryModal = () => {
       showEntryGrantedModal.value = false;
+    };
+
+    const closeExitModal = () => {
+      showExitModal.value = false;
     };
 
     // Use onAuthStateChanged to detect authentication state changes
@@ -181,6 +256,7 @@ export default {
           // Fetch the user profile once we confirm the user is authenticated
           fetchUserProfile(currentUser.uid);
           listenForAcceptedEntries();
+          listenForExits();
         } else {
           console.error("No user is signed in");
         }
@@ -191,9 +267,15 @@ export default {
       user,
       accountCreated,
       showEntryGrantedModal,
+      showExitModal,
       residentName,
+      residentPhase,
       residentProfilePic,
-      closeModal,
+      exitResidentName,
+      exitProfilePic,
+      exitResidentPhase,
+      closeEntryModal,
+      closeExitModal,
     };
   },
 };
@@ -245,34 +327,58 @@ h1 {
   text-transform: capitalize;
 }
 
-.modal-overlay {
-  position: fixed;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
-  background-color: rgba(0, 0, 0, 0.5);
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  z-index: 10000;
-}
-
-.modal {
+.modal-content {
   background-color: #fff;
   padding: 20px;
   border-radius: 8px;
-  width: 90%;
-  max-width: 400px;
+  max-width: 100%;
   text-align: center;
   box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+  margin-top: 20px;
+}
+
+.modal-content h2 {
+  display: inline-block; /* Allows the border to wrap tightly around the text */
+  padding: 8px 12px; /* Adds space inside the border */
+  border: 2px solid #3498db; /* Border with specified color */
+  border-radius: 5px; /* Rounds the corners (optional) */
+  font-weight: bold; /* Makes the text bold (optional) */
+  color: #000000; /* Text color */
+  background-color: #109b45;
+}
+
+.modal-content-exit {
+  background-color: #ffffff;
+  padding: 20px;
+  border: 2px solid #f5c6cb; /* Matches system-alerts border */
+  border-radius: 8px;
+  text-align: center;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+  margin-top: 10px;
+}
+
+.modal-content-exit h2 {
+  display: inline-block;
+  padding: 8px 12px;
+  border: 2px solid #f1d639; /* Red border for 'Exited' text */
+  border-radius: 5px;
+  color: #000000; /* Match the border color */
+  font-weight: bold;
+  background-color: #eb7d51;
 }
 
 .profile-pic {
-  width: 100px;
-  height: 100px;
+  width: 350px;
+  height: 350px;
   border-radius: 50%;
-  margin-bottom: 15px;
+  margin: 15px auto;
+}
+
+.profile-pic-exit {
+  width: 150px;
+  height: 150px;
+  border-radius: 50%;
+  margin: 15px auto;
 }
 
 button {
