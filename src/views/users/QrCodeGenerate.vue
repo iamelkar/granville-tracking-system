@@ -1,6 +1,6 @@
 <template>
   <div>
-    <!-- Conditional rendering of sidebars based on role -->
+    <!-- Sidebar based on user role -->
     <SidebarNav v-if="userRole === 'admin'" />
     <UserSideNav v-else-if="userRole === 'resident'" />
     <SecuritySidebar v-else-if="userRole === 'security'" />
@@ -46,7 +46,7 @@
               </label>
             </div>
 
-            <!-- Name and Image for Individual Walk-in -->
+            <!-- Individual Entry -->
             <div
               v-if="guestDetails.entryType === 'individual'"
               class="form-group"
@@ -54,11 +54,10 @@
               <label for="guestName">Name:</label>
               <input
                 type="text"
-                v-model="guestDetails.name"
+                v-model="guestDetails.guestName"
                 id="guestName"
                 required
               />
-
               <label for="individualImage">Upload Image:</label>
               <input
                 type="file"
@@ -69,19 +68,18 @@
               />
             </div>
 
-            <!-- Main Guest Name, Names List, and Driver Image for Group (Car) -->
+            <!-- Group Entry -->
             <div
               v-else-if="guestDetails.entryType === 'group'"
               class="form-group"
             >
-              <label for="mainName">Guest Name (Main):</label>
+              <label for="guestName">Guest Name (Main):</label>
               <input
                 type="text"
-                v-model="guestDetails.mainName"
-                id="mainName"
+                v-model="guestDetails.guestName"
+                id="guestName"
                 required
               />
-
               <label for="names">Names of Passengers (Separate by line):</label>
               <textarea
                 v-model="guestDetails.names"
@@ -89,86 +87,6 @@
                 placeholder="Enter one name per line"
                 required
               ></textarea>
-
-              <label for="driverImage">Upload Driver Image:</label>
-              <input
-                type="file"
-                @change="uploadImage('driver')"
-                id="driverImage"
-                accept="image/*"
-                required
-              />
-            </div>
-          </div>
-
-          <!-- Worker Category Specific Fields -->
-          <div v-if="guestDetails.category === 'worker'">
-            <label>Is the worker alone or from a company?</label>
-            <div>
-              <label>
-                <input
-                  type="radio"
-                  value="alone"
-                  v-model="guestDetails.workerStatus"
-                />
-                Alone (Individual Worker)
-              </label>
-              <label>
-                <input
-                  type="radio"
-                  value="group"
-                  v-model="guestDetails.workerStatus"
-                />
-                Group (Company)
-              </label>
-            </div>
-
-            <!-- Name and Image for Individual Worker -->
-            <div
-              v-if="guestDetails.workerStatus === 'alone'"
-              class="form-group"
-            >
-              <label for="workerName">Name:</label>
-              <input
-                type="text"
-                v-model="guestDetails.name"
-                id="workerName"
-                required
-              />
-
-              <label for="workerImage">Upload Worker Image:</label>
-              <input
-                type="file"
-                @change="uploadImage('worker')"
-                id="workerImage"
-                accept="image/*"
-                required
-              />
-            </div>
-
-            <!-- Worker List and Driver Image for Group -->
-            <div
-              v-else-if="guestDetails.workerStatus === 'group'"
-              class="form-group"
-            >
-              <label for="mainName">Main Worker Name:</label>
-              <input
-                type="text"
-                v-model="guestDetails.mainName"
-                id="mainName"
-                required
-              />
-
-              <label for="workerList"
-                >List of Workers (Separate by line):</label
-              >
-              <textarea
-                v-model="guestDetails.workerList"
-                id="workerList"
-                placeholder="Enter one name per line"
-                required
-              ></textarea>
-
               <label for="driverImage">Upload Driver Image:</label>
               <input
                 type="file"
@@ -189,8 +107,8 @@
                 Set Validity Duration (in hours)
               </label>
               <label>
-                <input type="radio" value="date" v-model="expirationType" /> Set
-                Start and End Date
+                <input type="radio" value="date" v-model="expirationType" />
+                Set Start and End Date
               </label>
             </div>
           </div>
@@ -213,7 +131,6 @@
               id="startDate"
               required
             />
-
             <label for="endDate">End Date:</label>
             <input
               type="datetime-local"
@@ -229,20 +146,13 @@
         <div v-if="qrCodeUrl" class="qr-code">
           <h3>
             QR Code for
-            {{
-              guestDetails.mainName || guestDetails.names || guestDetails.name
-            }}
+            {{ guestDetails.guestName }}
             - {{ guestDetails.category }}
           </h3>
           <img :src="qrCodeUrl" alt="Generated QR Code" />
-
           <a
             :href="qrCodeUrl"
-            :download="
-              (guestDetails.mainName ||
-                guestDetails.names ||
-                guestDetails.name) + '-QRCode.png'
-            "
+            :download="guestDetails.guestName + '-QRCode.png'"
             class="download-button"
           >
             Download QR Code
@@ -260,7 +170,6 @@
 </template>
 
 <script>
-// Import statements
 import SidebarNav from "@/components/SidebarNav.vue";
 import UserSideNav from "@/components/user/UserSideNav.vue";
 import SecuritySidebar from "@/components/securityComp/SecuritySidebar.vue";
@@ -288,10 +197,8 @@ export default {
       guestDetails: {
         category: "",
         entryType: "",
-        mainName: "", // New main guest name for groups
-        names: "", // Multiple names if it's a group (textarea)
-        workerStatus: "", // Worker alone or group
-        name: "", // Single name input for individual
+        guestName: "", // Main guest name for both individual and group entries
+        names: "", // Passenger names for group entries only
         imageUrl: "", // Image URL for driver or individual
       },
       validityDuration: 1,
@@ -359,17 +266,15 @@ export default {
             : new Date(this.endDate);
 
         const names =
-          this.guestDetails.entryType === "group" ||
-          this.guestDetails.workerStatus === "group"
+          this.guestDetails.entryType === "group"
             ? this.guestDetails.names.split("\n")
-            : [this.guestDetails.name];
+            : null;
 
         const qrCodeRef = await addDoc(collection(db, "guest_qrcodes"), {
-          mainName: this.guestDetails.mainName, // Main guest name for groups
+          guestName: this.guestDetails.guestName, // Unified guest name for individual and main group name
           names,
           category: this.guestDetails.category,
           entryType: this.guestDetails.entryType,
-          workerStatus: this.guestDetails.workerStatus,
           createdBy: currentUser.email,
           creatorName: this.creatorName,
           imageUrl: this.guestDetails.imageUrl,
@@ -379,7 +284,7 @@ export default {
           createdAt: serverTimestamp(),
         });
 
-        const qrCodeData = `https://granville-tracking-system.com/view-qr/${qrCodeRef.id}`;
+        const qrCodeData = `localhost:8080/view-qr/${qrCodeRef.id}`;
         this.qrCodeUrl = await QRCode.toDataURL(qrCodeData, { width: 300 });
 
         await updateDoc(doc(db, "guest_qrcodes", qrCodeRef.id), {

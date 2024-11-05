@@ -15,6 +15,7 @@
             <tr>
               <th>Guest Name</th>
               <th>Category</th>
+              <th>Start Date</th>
               <th>Expiration Time</th>
               <th>Actions</th>
             </tr>
@@ -23,17 +24,17 @@
             <tr v-for="(qrCode, index) in qrCodes" :key="index">
               <td>
                 <a href="#" @click.prevent="viewQRCode(qrCode)">
-                  {{ qrCode.mainName || qrCode.guestName }}
+                  {{ qrCode.guestName }}
                 </a>
               </td>
               <td>{{ qrCode.category }}</td>
+              <td>{{ getStartDate(qrCode) }}</td>
               <td>{{ formatExpirationTime(qrCode.expirationTime) }}</td>
               <td>
                 <button @click="openEditModal(qrCode)">Edit</button>
-                <button @click="deleteQRCode(qrCode.id)" class="delete-button">
+                <!-- <button @click="deleteQRCode(qrCode.id)" class="delete-button">
                   Delete
-                </button>
-                <button @click="openHistoryModal(qrCode)">View History</button>
+                </button> -->
               </td>
             </tr>
           </tbody>
@@ -46,30 +47,15 @@
           <h3>Edit QR Code</h3>
           <form @submit.prevent="updateQRCode">
             <div class="form-group">
-              <label for="guestName">Main Guest Name:</label>
+              <label for="guestName">Guest Name:</label>
               <input
                 type="text"
-                v-model="selectedQRCode.mainName"
+                v-model="selectedQRCode.guestName"
                 id="guestName"
                 required
               />
             </div>
 
-            <div
-              v-if="
-                selectedQRCode.category === 'guest' ||
-                selectedQRCode.category === 'renter'
-              "
-              class="form-group"
-            >
-              <label for="entryType">Entry Type:</label>
-              <select v-model="selectedQRCode.entryType" id="entryType">
-                <option value="individual">Individual</option>
-                <option value="group">Group</option>
-              </select>
-            </div>
-
-            <!-- Conditional field for groups to edit guest list names -->
             <div v-if="selectedQRCode.entryType === 'group'" class="form-group">
               <label for="guestList">List of Names (Separate by line):</label>
               <textarea
@@ -87,26 +73,15 @@
                 id="newImage"
                 accept="image/*"
               />
-              <small v-if="selectedQRCode.imageUrl"
-                >Current Image:
+              <small v-if="selectedQRCode.imageUrl">
+                Current Image:
                 <img
                   :src="selectedQRCode.imageUrl"
                   alt="Current Image"
                   class="current-image"
-              /></small>
+                />
+              </small>
             </div>
-
-            <!-- <div class="form-group">
-              <label for="validityDuration"
-                >Extend Validity Duration (hours):</label
-              >
-              <input
-                type="number"
-                v-model="selectedQRCode.validityDuration"
-                id="validityDuration"
-                required
-              />
-            </div> -->
 
             <div class="form-group">
               <label for="expirationTime">Expiration Time:</label>
@@ -133,50 +108,18 @@
         </div>
       </div>
 
-      <!-- Edit History Modal -->
-      <div v-if="showHistoryModal" class="modal-overlay">
-        <div class="modal">
-          <h3>
-            Edit History for
-            {{ selectedQRCode.mainName || selectedQRCode.guestName }}
-          </h3>
-          <table class="history-table">
-            <thead>
-              <tr>
-                <th>Previous Name</th>
-                <th>Category</th>
-                <th>Previous Expiration</th>
-                <th>Edit Date</th>
-              </tr>
-            </thead>
-            <tbody>
-              <tr v-for="(history, index) in editHistory" :key="index">
-                <td>{{ history.mainName }}</td>
-                <td>{{ history.category }}</td>
-                <td>{{ formatExpirationTime(history.expirationTime) }}</td>
-                <td>{{ formatExpirationTime(history.editTimestamp) }}</td>
-              </tr>
-            </tbody>
-          </table>
-          <button @click="closeHistoryModal">Close</button>
-        </div>
-      </div>
-
       <!-- QR Code Modal -->
       <div v-if="showQRCodeModal" class="modal-overlay">
         <div class="modal">
           <h3>
             QR Code for
-            {{ selectedQRCode.mainName || selectedQRCode.guestName }}
+            {{ selectedQRCode.guestName }}
           </h3>
           <img :src="selectedQRCode.qrCodeUrl" alt="Generated QR Code" />
           <div class="modal-actions">
             <a
               :href="selectedQRCode.qrCodeUrl"
-              :download="
-                (selectedQRCode.mainName || selectedQRCode.guestName) +
-                '-QRCode.png'
-              "
+              :download="selectedQRCode.guestName + '-QRCode.png'"
               class="download-button"
             >
               Download QR Code
@@ -198,14 +141,11 @@ import {
   updateDoc,
   getDoc,
   deleteDoc,
-  addDoc,
   query,
   where,
-  serverTimestamp,
 } from "firebase/firestore";
 import { db, storage } from "@/firebase";
 import { getAuth } from "firebase/auth";
-import { ref } from "vue";
 import {
   ref as storageRef,
   uploadBytes,
@@ -220,11 +160,8 @@ export default {
       showEditModal: false,
       selectedQRCode: null,
       showQRCodeModal: false,
-      showHistoryModal: false,
-      editHistory: [],
-      newImageUrl: null, // Use newImageUrl as a simple data property instead of a ref
-      editHistoryCollection: collection(db, "edit_history"),
-      newExpirationTime: null, // Added field to manage expiration time editing
+      newImageUrl: null,
+      newExpirationTime: null,
     };
   },
   async created() {
@@ -255,6 +192,17 @@ export default {
         console.error("Error fetching QR codes:", error);
       }
     },
+    getStartDate(qrCode) {
+      // Return startDate if it exists, otherwise return createdAt
+      return qrCode.startDate
+        ? this.formatTimestamp(qrCode.startDate)
+        : this.formatTimestamp(qrCode.createdAt);
+    },
+    formatTimestamp(timestamp) {
+      if (!timestamp) return "";
+      const date = new Date(timestamp.seconds * 1000);
+      return date.toLocaleString();
+    },
     viewQRCode(qrCode) {
       this.selectedQRCode = qrCode;
       this.showQRCodeModal = true;
@@ -269,12 +217,12 @@ export default {
         ? new Date(qrCode.expirationTime.seconds * 1000)
             .toISOString()
             .slice(0, 16)
-        : null; // Pre-fill expiration time
+        : null;
       this.showEditModal = true;
     },
     closeEditModal() {
       this.selectedQRCode = null;
-      this.newExpirationTime = null; // Clear expiration time when closing modal
+      this.newExpirationTime = null;
       this.showEditModal = false;
     },
     async uploadNewImage(event) {
@@ -286,7 +234,7 @@ export default {
             `guestImages/${this.selectedQRCode.id}/${file.name}`
           );
           await uploadBytes(imageRef, file);
-          this.newImageUrl = await getDownloadURL(imageRef); // Set as a regular data property
+          this.newImageUrl = await getDownloadURL(imageRef);
           console.log("Image uploaded successfully:", this.newImageUrl);
         } catch (error) {
           console.error("Error uploading image:", error);
@@ -297,40 +245,31 @@ export default {
       if (this.selectedQRCode) {
         try {
           const qrCodeRef = doc(db, "guest_qrcodes", this.selectedQRCode.id);
+
+          // Prepare data to update in guest_qrcodes
           const updatedData = {
             guestName: this.selectedQRCode.guestName || null,
-            names: this.selectedQRCode.names || null,
-            validityDuration: this.selectedQRCode.validityDuration || null,
+            expirationTime: this.newExpirationTime
+              ? new Date(this.newExpirationTime)
+              : this.selectedQRCode.expirationTime,
           };
 
-          // Update expiration time if changed
-          if (this.newExpirationTime) {
-            updatedData.expirationTime = new Date(this.newExpirationTime);
+          if (this.selectedQRCode.entryType === "group") {
+            // Check if `names` is a string; if so, split it, otherwise use it directly
+            updatedData.names =
+              typeof this.selectedQRCode.names === "string"
+                ? this.selectedQRCode.names.split("\n")
+                : this.selectedQRCode.names;
+          } else {
+            updatedData.names = null; // Clear names array for individual entry
           }
 
-          // Include new image URL if uploaded
           if (this.newImageUrl) {
             updatedData.imageUrl = this.newImageUrl;
           }
 
-          // Save edit history before updating
-          const originalData = (await getDoc(qrCodeRef)).data();
-
-          // Filter out undeefined fields from originalData and updatedData for edit history
-          const sanitizedOriginalData = this.sanitizeData(originalData)
-          const sanitizedUpdatedData = this.sanitizeData(updatedData)
-
-          // Store edit history
-          await addDoc(this.editHistoryCollection, {
-            qrCodeId: this.selectedQRCode.id,
-            previousData: sanitizedOriginalData,
-            newData: sanitizedUpdatedData,
-            editedAt: serverTimestamp(),
-            editedBy: getAuth().currentUser.email,
-          });
-
-          // Update the Firestore document with new data
-          await updateDoc(qrCodeRef, sanitizedUpdatedData);
+          // Update Firestore document
+          await updateDoc(qrCodeRef, updatedData);
 
           alert("QR Code updated successfully!");
           this.closeEditModal();
@@ -351,59 +290,6 @@ export default {
         }
       }
     },
-    // async openHistoryModal(qrCode) {
-    //   this.selectedQRCode = qrCode;
-    //   const qrCodeRef = doc(db, "guest_qrcodes", qrCode.id);
-    //   const historySnapshot = await getDocs(
-    //     collection(qrCodeRef, "edit_history")
-    //   );
-    //   this.editHistory = historySnapshot.docs.map((doc) => doc.data());
-    //   this.showHistoryModal = true;
-    // },
-    async openHistoryModal(qrCode) {
-      try {
-        this.selectedQRCode = qrCode;
-        const qrCodeRef = doc(db, "guest_qrcodes", qrCode.id);
-
-        console.log("Attempting to access edit_history for QR Code ID:", qrCode.id);
-
-        // Fetch the edit history documents
-        const historySnapshot = await getDocs(
-            collection(qrCodeRef, "edit_history")
-        );
-
-        if (historySnapshot.empty) {
-            console.log("No edit history found for this QR Code.");
-            this.editHistory = [];
-        } else {
-            // Map history and log each entry for debugging
-            this.editHistory = historySnapshot.docs.map((doc) => {
-                const data = doc.data();
-                console.log("Fetched edit history entry:", data);
-
-                // Log the editedBy field to verify it matches the current user
-                if (data.editedBy) {
-                    console.log("Edit history entry edited by:", data.editedBy);
-                } else {
-                    console.warn("Edit history entry missing editedBy field.");
-                }
-                
-                return data;
-            });
-        }
-
-        this.showHistoryModal = true;
-
-      } catch (error) {
-        console.error("Error opening history modal:", error.message);
-        alert("Unable to load edit history. Please check your permissions or try again later.");
-      }
-    },
-
-    closeHistoryModal() {
-      this.editHistory = [];
-      this.showHistoryModal = false;
-    },
     async expireQRCodeNow() {
       const qrCodeRef = doc(db, "guest_qrcodes", this.selectedQRCode.id);
       await updateDoc(qrCodeRef, { expirationTime: new Date() });
@@ -416,21 +302,17 @@ export default {
       const date = new Date(timestamp.seconds * 1000);
       return date.toLocaleString();
     },
-    sanitizeData(data){
-      return Object.fromEntries(Object.entries(data).filter(([_, v]) => v != null))
-    }
   },
 };
 </script>
 
 <style>
-/* Table styling */
-
+/* Styling for the table, modal, and other elements */
 .main-content {
-  margin-left: 300px; /* Add margin to the left to avoid overlap with the sidebar */
-  padding: 20px; /* A light background color for contrast */
+  margin-left: 300px;
+  padding: 20px;
   min-height: 100vh;
-  box-sizing: border-box; /* Ensure padding is included in the total width */
+  box-sizing: border-box;
 }
 
 .qr-codes-table {

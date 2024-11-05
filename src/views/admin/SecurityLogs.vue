@@ -17,11 +17,19 @@
         <button @click="clearDateFilter">All Logs</button>
 
         <label>
+          Filter by:
+          <select v-model="logTypeFilter">
+            <option value="all">All Logs</option>
+            <option value="rfid">RFID</option>
+            <option value="qr">QR Codes</option>
+          </select>
+        </label>
+
+        <label>
           Sort by:
           <select v-model="sortOption">
             <option value="latest">Latest</option>
             <option value="timestamp">Date</option>
-            <option value="mode">Mode</option>
           </select>
         </label>
       </div>
@@ -30,20 +38,24 @@
         <table class="logs-table">
           <thead>
             <tr>
-              <th @click="sortLogs('residentName')">Resident Name</th>
+              <th @click="sortLogs('name')">Name</th>
               <th @click="sortLogs('timestamp')">Timestamp</th>
               <th @click="sortLogs('mode')">Mode</th>
+              <th>Status</th>
+              <th>Details</th>
             </tr>
           </thead>
           <tbody>
             <tr
               v-for="log in filteredLogs"
               :key="log.id"
-              :class="getRowClass(log.mode)"
+              :class="getRowClass(log.message, log.mode)"
             >
-              <td>{{ log.residentName }}</td>
+              <td>{{ log.residentName || log.guestName || "N/A" }}</td>
               <td>{{ log.timestamp }}</td>
-              <td>{{ log.mode }}</td>
+              <td>{{ log.mode || log.category || "N/A" }}</td>
+              <td>{{ log.message || "N/A" }}</td>
+              <td>{{ log.additionalDetails || "N/A" }}</td>
             </tr>
           </tbody>
         </table>
@@ -53,16 +65,9 @@
 </template>
 
 <script>
-// Importing SidebarNav component
 import SidebarNav from "@/components/SidebarNav.vue";
 import { db } from "@/firebase";
-import {
-  collection,
-  getDocs,
-  query,
-  where,
-  Timestamp,
-} from "firebase/firestore";
+import { collection, getDocs } from "firebase/firestore";
 import { ref, onMounted, computed } from "vue";
 
 export default {
@@ -73,61 +78,90 @@ export default {
     const allLogs = ref([]);
     const searchQuery = ref("");
     const sortOption = ref("latest");
+    const logTypeFilter = ref("all"); // New filter for log type
     const today = new Date();
     today.setHours(0, 0, 0, 0);
 
     const fetchAllLogs = async () => {
       const users = {};
-      const userSnapshot = await getDocs(collection(db, "users"));
-      userSnapshot.forEach((userDoc) => {
-        const data = userDoc.data();
-        users[data.rfidTag] = `${data.firstName} ${data.lastName}`;
-      });
-
-      const logsSnapshot = await getDocs(collection(db, "all_rfid_logs"));
       const logs = [];
-      logsSnapshot.forEach((logDoc) => {
-        const logData = logDoc.data();
-        const rfidTag = logData.rfidTag;
 
-        if (users[rfidTag]) {
+      try {
+        // Fetch all users and map rfidTag to resident name
+        const userSnapshot = await getDocs(collection(db, "users"));
+        userSnapshot.forEach((userDoc) => {
+          const data = userDoc.data();
+          if (data.rfidTag) {
+            users[data.rfidTag] = `${data.firstName} ${data.lastName}`;
+          }
+        });
+
+        // Fetch RFID logs and associate names based on rfidTag
+        const rfidLogsSnapshot = await getDocs(collection(db, "all_rfid_logs"));
+        rfidLogsSnapshot.forEach((logDoc) => {
+          const logData = logDoc.data();
+          const residentName = users[logData.rfidTag] || "N/A";
           logs.push({
             id: logDoc.id,
-            residentName: users[rfidTag],
+            residentName, // Set resident name for RFID logs
             timestamp: logData.timestamp.toDate().toLocaleString(),
             rawTimestamp: logData.timestamp,
             mode: logData.mode,
+            message: logData.message || "N/A",
+            additionalDetails: logData.additionalDetails || null,
+            type: "rfid", // Mark this log as RFID
           });
-        }
-      });
+        });
 
-      allLogs.value = logs;
+        // Fetch QR code logs and handle guest name directly from the log data
+        const qrLogsSnapshot = await getDocs(collection(db, "qr_scan_logs"));
+        qrLogsSnapshot.forEach((logDoc) => {
+          const logData = logDoc.data();
+          logs.push({
+            id: logDoc.id,
+            guestName: logData.guestName,
+            category: logData.category || "QR Code",
+            timestamp: logData.scanTime
+              ? logData.scanTime.toDate().toLocaleString()
+              : "Unknown",
+            rawTimestamp: logData.scanTime,
+            message: logData.message || "N/A",
+            additionalDetails: logData.additionalDetails || null,
+            type: "qr", // Mark this log as QR Code
+          });
+        });
+
+        allLogs.value = logs;
+      } catch (error) {
+        console.error("Error fetching logs:", error);
+      }
     };
 
     const filteredLogs = computed(() => {
+      const search = searchQuery.value.toLowerCase();
+
       let result = allLogs.value.filter((log) => {
-        const search = searchQuery.value.toLowerCase();
-        const matchesSearch = log.residentName.toLowerCase().includes(search);
+        const name = (log.residentName || log.guestName || "").toLowerCase();
+        const matchesSearch = name.includes(search);
 
-        // Apply today's filter by default
-        const isToday =
-          log.rawTimestamp &&
-          log.rawTimestamp.toDate().toDateString() === today.toDateString();
+        // Apply logTypeFilter for RFID or QR Codes
+        const matchesType =
+          logTypeFilter.value === "all" ||
+          (logTypeFilter.value === "rfid" && log.type === "rfid") ||
+          (logTypeFilter.value === "qr" && log.type === "qr");
 
-        return matchesSearch && isToday;
+        return matchesSearch && matchesType;
       });
 
       // Apply sorting
       if (sortOption.value === "latest") {
         result = result.sort(
           (a, b) => b.rawTimestamp.seconds - a.rawTimestamp.seconds
-        ); // Descending by timestamp
-      } else if (sortOption.value === "timestamp") {
-        result = result.sort((a, b) =>
-          a.rawTimestamp.seconds < b.rawTimestamp.seconds ? -1 : 1
         );
-      } else if (sortOption === "mode") {
-        result = result.sort((a, b) => (a.mode < b.mode ? -1 : 1));
+      } else if (sortOption.value === "timestamp") {
+        result = result.sort(
+          (a, b) => a.rawTimestamp.seconds - b.rawTimestamp.seconds
+        );
       }
 
       return result;
@@ -141,9 +175,13 @@ export default {
       searchQuery.value = "";
     };
 
-    const getRowClass = (mode) => {
-      if (mode.includes("Entry") || mode.includes("entry")) return "entry";
-      if (mode.includes("Exit") || mode.includes("exit")) return "exit";
+    const getRowClass = (message, mode) => {
+      if (message === "successful entry") return "entry";
+      if (message === "invalid") return "exit";
+      if (mode && (mode.includes("Entry") || mode.includes("entry")))
+        return "entry";
+      if (mode && (mode.includes("Exit") || mode.includes("exit")))
+        return "exit";
       return "";
     };
 
@@ -152,6 +190,7 @@ export default {
     return {
       searchQuery,
       sortOption,
+      logTypeFilter, // Add the logTypeFilter to return
       filteredLogs,
       filterTodayLogs,
       clearDateFilter,
@@ -162,37 +201,18 @@ export default {
 </script>
 
 <style>
-/* General reset to avoid padding/margin issues */
-* {
-  margin: 0;
-  padding: 0;
-  box-sizing: border-box;
+.access-granted {
+  color: green;
+  font-weight: bold;
 }
 
-/* Style for the container */
-body {
-  font-family: Arial, sans-serif;
+.access-failed {
+  color: red;
+  font-weight: bold;
 }
 
-/* Sidebar styles */
-.sidebar {
-  position: fixed;
-  top: 0;
-  left: 0;
-  width: 300px; /* Fixed width of the sidebar */
-  height: 100vh; /* Full viewport height */
-  background-color: #2c3e50;
-  color: white;
-  padding: 20px;
-  display: flex;
-  flex-direction: column;
-  justify-content: space-between;
-  z-index: 1000; /* Keeps the sidebar above the main content */
-}
-
-/* Main content area */
 .main-content {
-  margin-left: 250px; /* Make room for the fixed sidebar */
+  margin-left: 250px;
   padding: 20px;
   background-color: #00bfa5;
   height: 100vh;
@@ -263,14 +283,13 @@ button:hover {
   background-color: #2980b9;
 }
 
-/* Additional styling for responsiveness */
 @media (max-width: 768px) {
   .sidebar {
-    width: 200px; /* Adjust sidebar width on smaller screens */
+    width: 200px;
   }
 
   .main-content {
-    margin-left: 200px; /* Adjust content margin accordingly */
+    margin-left: 200px;
   }
 }
 </style>
