@@ -6,7 +6,7 @@
         <div v-if="qrCodeDetails.imageUrl" class="guest-image">
           <img :src="qrCodeDetails.imageUrl" alt="Guest Image" />
         </div>
-        <p><strong>Guest Name:</strong> {{ qrCodeDetails.guestName }}</p>
+        <p><strong>Guest Name:</strong> {{ qrCodeDetails.mainName }}</p>
         <p><strong>Category:</strong> {{ qrCodeDetails.category }}</p>
         <p><strong>Expiration Time:</strong> {{ new Date(qrCodeDetails.expirationTime.seconds * 1000).toLocaleString() }}</p>
         
@@ -58,9 +58,14 @@
   .guest-image {
     margin-top: 20px;
   }
+
+  p {
+    font-size: 30px;
+    padding-bottom: 12px;
+  }
   
   .guest-image img {
-    max-width: 200px;
+    max-width: 400px;
     height: auto;
     border-radius: 8px;
     box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
@@ -73,7 +78,7 @@
 }
 .valid-text {
   color: green;
-  font-size: 24px;
+  font-size: 50px;
   font-weight: bold;
   margin-top: 20px;
 }

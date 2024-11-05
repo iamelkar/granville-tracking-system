@@ -298,9 +298,9 @@ export default {
         try {
           const qrCodeRef = doc(db, "guest_qrcodes", this.selectedQRCode.id);
           const updatedData = {
-            guestName: this.selectedQRCode.guestName,
-            names: this.selectedQRCode.names,
-            validityDuration: this.selectedQRCode.validityDuration,
+            guestName: this.selectedQRCode.guestName || null,
+            names: this.selectedQRCode.names || null,
+            validityDuration: this.selectedQRCode.validityDuration || null,
           };
 
           // Update expiration time if changed
@@ -315,16 +315,22 @@ export default {
 
           // Save edit history before updating
           const originalData = (await getDoc(qrCodeRef)).data();
+
+          // Filter out undeefined fields from originalData and updatedData for edit history
+          const sanitizedOriginalData = this.sanitizeData(originalData)
+          const sanitizedUpdatedData = this.sanitizeData(updatedData)
+
+          // Store edit history
           await addDoc(this.editHistoryCollection, {
             qrCodeId: this.selectedQRCode.id,
-            previousData: originalData,
-            newData: updatedData,
+            previousData: sanitizedOriginalData,
+            newData: sanitizedUpdatedData,
             editedAt: serverTimestamp(),
             editedBy: getAuth().currentUser.email,
           });
 
           // Update the Firestore document with new data
-          await updateDoc(qrCodeRef, updatedData);
+          await updateDoc(qrCodeRef, sanitizedUpdatedData);
 
           alert("QR Code updated successfully!");
           this.closeEditModal();
@@ -345,15 +351,55 @@ export default {
         }
       }
     },
+    // async openHistoryModal(qrCode) {
+    //   this.selectedQRCode = qrCode;
+    //   const qrCodeRef = doc(db, "guest_qrcodes", qrCode.id);
+    //   const historySnapshot = await getDocs(
+    //     collection(qrCodeRef, "edit_history")
+    //   );
+    //   this.editHistory = historySnapshot.docs.map((doc) => doc.data());
+    //   this.showHistoryModal = true;
+    // },
     async openHistoryModal(qrCode) {
-      this.selectedQRCode = qrCode;
-      const qrCodeRef = doc(db, "guest_qrcodes", qrCode.id);
-      const historySnapshot = await getDocs(
-        collection(qrCodeRef, "edit_history")
-      );
-      this.editHistory = historySnapshot.docs.map((doc) => doc.data());
-      this.showHistoryModal = true;
+      try {
+        this.selectedQRCode = qrCode;
+        const qrCodeRef = doc(db, "guest_qrcodes", qrCode.id);
+
+        console.log("Attempting to access edit_history for QR Code ID:", qrCode.id);
+
+        // Fetch the edit history documents
+        const historySnapshot = await getDocs(
+            collection(qrCodeRef, "edit_history")
+        );
+
+        if (historySnapshot.empty) {
+            console.log("No edit history found for this QR Code.");
+            this.editHistory = [];
+        } else {
+            // Map history and log each entry for debugging
+            this.editHistory = historySnapshot.docs.map((doc) => {
+                const data = doc.data();
+                console.log("Fetched edit history entry:", data);
+
+                // Log the editedBy field to verify it matches the current user
+                if (data.editedBy) {
+                    console.log("Edit history entry edited by:", data.editedBy);
+                } else {
+                    console.warn("Edit history entry missing editedBy field.");
+                }
+                
+                return data;
+            });
+        }
+
+        this.showHistoryModal = true;
+
+      } catch (error) {
+        console.error("Error opening history modal:", error.message);
+        alert("Unable to load edit history. Please check your permissions or try again later.");
+      }
     },
+
     closeHistoryModal() {
       this.editHistory = [];
       this.showHistoryModal = false;
@@ -370,6 +416,9 @@ export default {
       const date = new Date(timestamp.seconds * 1000);
       return date.toLocaleString();
     },
+    sanitizeData(data){
+      return Object.fromEntries(Object.entries(data).filter(([_, v]) => v != null))
+    }
   },
 };
 </script>
