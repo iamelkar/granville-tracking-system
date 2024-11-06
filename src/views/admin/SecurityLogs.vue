@@ -13,8 +13,8 @@
           class="search-input"
         />
 
-        <button @click="filterTodayLogs">Today's Logs</button>
-        <button @click="clearDateFilter">All Logs</button>
+        <!-- Date Picker for Filtering by Specific Date -->
+         <input type="date" v-model="selectedDate" class="date-input" placeholder="Select Date" />
 
         <label>
           Filter by:
@@ -79,8 +79,7 @@ export default {
     const searchQuery = ref("");
     const sortOption = ref("latest");
     const logTypeFilter = ref("all"); // New filter for log type
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
+    const selectedDate = ref("")
 
     const fetchAllLogs = async () => {
       const users = {};
@@ -103,7 +102,7 @@ export default {
           const residentName = users[logData.rfidTag] || "N/A";
           logs.push({
             id: logDoc.id,
-            residentName, // Set resident name for RFID logs
+            residentName,
             timestamp: logData.timestamp.toDate().toLocaleString(),
             rawTimestamp: logData.timestamp,
             mode: logData.mode,
@@ -140,6 +139,10 @@ export default {
     const filteredLogs = computed(() => {
       const search = searchQuery.value.toLowerCase();
 
+      // Get the date part only from selectedDate for comparison
+      const selectedDateValue = selectedDate.value ? new Date(selectedDate.value)
+      .toDateString() : null
+
       let result = allLogs.value.filter((log) => {
         const name = (log.residentName || log.guestName || "").toLowerCase();
         const matchesSearch = name.includes(search);
@@ -150,7 +153,16 @@ export default {
           (logTypeFilter.value === "rfid" && log.type === "rfid") ||
           (logTypeFilter.value === "qr" && log.type === "qr");
 
-        return matchesSearch && matchesType;
+        // // Filter by selectedDate if a date is chosen
+        // const matchesDate = !selectedDate.value || (log.rawTimestamp && 
+        // log.rawTimestamp.toDate().toLocaleString() ===
+        // new Date(selectedDate.value).toLocaleDateString())
+        const logDataValue = log.rawTimestamp ? log.rawTimestamp.toDate()
+        .toDateString() : null
+
+        const matchesDate = !selectedDateValue || logDataValue === selectedDateValue
+
+        return matchesSearch && matchesType && matchesDate;
       });
 
       // Apply sorting
@@ -166,14 +178,6 @@ export default {
 
       return result;
     });
-
-    const filterTodayLogs = () => {
-      searchQuery.value = "";
-    };
-
-    const clearDateFilter = () => {
-      searchQuery.value = "";
-    };
 
     const getRowClass = (message, mode) => {
       if (message === "successful entry") return "entry";
@@ -191,9 +195,8 @@ export default {
       searchQuery,
       sortOption,
       logTypeFilter, // Add the logTypeFilter to return
+      selectedDate,
       filteredLogs,
-      filterTodayLogs,
-      clearDateFilter,
       getRowClass,
     };
   },
@@ -222,6 +225,11 @@ export default {
   margin-bottom: 15px;
   display: flex;
   gap: 10px;
+}
+
+.date-input {
+  padding: 8px;
+  margin-left: 10px;
 }
 
 .search-input {

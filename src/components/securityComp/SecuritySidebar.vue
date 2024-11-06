@@ -18,9 +18,9 @@
           <router-link to="/qr-scan">QR Code Scanner</router-link>
           <!-- New Button -->
         </li>
-        <li>
+        <!-- <li>
           <router-link to="/user-logs">Logs</router-link>
-        </li>
+        </li> -->
       </ul>
     </nav>
 

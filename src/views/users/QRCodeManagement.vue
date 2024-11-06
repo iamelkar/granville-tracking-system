@@ -1,6 +1,9 @@
 <template>
   <div>
-    <UserSideNav />
+    <!-- Sidebar based on user role -->
+    <SidebarNav v-if="userRole === 'admin'" />
+    <UserSideNav v-else-if="userRole === 'resident'" />
+    <SecuritySidebar v-else-if="userRole === 'security'" />
 
     <div class="main-content">
       <h2>Your Generated QR Codes</h2>
@@ -84,6 +87,16 @@
             </div>
 
             <div class="form-group">
+              <label for="startDate">Start Date:</label>
+              <input
+                type="datetime-local"
+                v-model="newStartDate"
+                id="startDate"
+                required
+              />
+            </div>
+
+            <div class="form-group">
               <label for="expirationTime">Expiration Time:</label>
               <input
                 type="datetime-local"
@@ -151,9 +164,11 @@ import {
   uploadBytes,
   getDownloadURL,
 } from "firebase/storage";
+import SidebarNav from "@/components/SidebarNav.vue";
+import SecuritySidebar from "@/components/securityComp/SecuritySidebar.vue";
 
 export default {
-  components: { UserSideNav },
+  components: { UserSideNav, SidebarNav, SecuritySidebar },
   data() {
     return {
       qrCodes: [],
@@ -161,13 +176,37 @@ export default {
       selectedQRCode: null,
       showQRCodeModal: false,
       newImageUrl: null,
+      newStartDate: null,
       newExpirationTime: null,
+      userRole: "",
     };
   },
   async created() {
     await this.fetchUserQRCodes();
+    await this.getUserRole()
   },
+  
   methods: {
+    async getUserRole() {
+      const auth = getAuth();
+      const currentUser = auth.currentUser;
+
+      if (!currentUser) return;
+
+      try {
+        const userDocRef = doc(db, "users", currentUser.uid);
+        const userDoc = await getDoc(userDocRef);
+
+        if (userDoc.exists()) {
+          const userData = userDoc.data();
+          this.userRole = userData.role;
+          this.creatorName = `${userData.firstName} ${userData.lastName}`;
+        }
+      } catch (error) {
+        console.error("Error fetching user role:", error);
+      }
+    },
+
     async fetchUserQRCodes() {
       const auth = getAuth();
       const currentUser = auth.currentUser;
@@ -213,6 +252,9 @@ export default {
     },
     openEditModal(qrCode) {
       this.selectedQRCode = { ...qrCode };
+      this.newStartDate = qrCode.startDate
+        ? new Date(qrCode.startDate.seconds * 1000).toISOString().slice(0, 16)
+        : new Date(qrCode.createdAt.seconds * 1000).toISOString().slice(0, 16)
       this.newExpirationTime = qrCode.expirationTime
         ? new Date(qrCode.expirationTime.seconds * 1000)
             .toISOString()
@@ -249,6 +291,9 @@ export default {
           // Prepare data to update in guest_qrcodes
           const updatedData = {
             guestName: this.selectedQRCode.guestName || null,
+            startDate: this.newStartDate
+              ? new Date(this.newStartDate)
+              : this.selectedQRCode.startDate,
             expirationTime: this.newExpirationTime
               ? new Date(this.newExpirationTime)
               : this.selectedQRCode.expirationTime,
@@ -307,6 +352,21 @@ export default {
 </script>
 
 <style>
+/* Sidebar styles */
+.sidebar {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 300px; /* Fixed width of the sidebar */
+  height: 100vh; /* Full viewport height */
+  background-color: #2c3e50;
+  color: white;
+  padding: 20px;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  z-index: 1000; /* Keeps the sidebar above the main content */
+}
 /* Styling for the table, modal, and other elements */
 .main-content {
   margin-left: 300px;
