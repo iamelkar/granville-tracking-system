@@ -417,7 +417,7 @@ export default {
   padding: 10px;
   cursor: pointer;
   border: 1px solid #ccc;
-  background-color: #f0f0f0;
+  background-color: #82b476;
   border-radius: 5px;
 }
 

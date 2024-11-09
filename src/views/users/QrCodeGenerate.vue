@@ -23,7 +23,8 @@
           <div
             v-if="
               guestDetails.category === 'guest' ||
-              guestDetails.category === 'renter'
+              guestDetails.category === 'renter' ||
+              guestDetails.category === 'worker'
             "
           >
             <label>Entry Type:</label>

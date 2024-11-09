@@ -32,13 +32,14 @@ import {
   addDoc,
   collection,
   doc,
+  updateDoc,
   getDoc,
   getDocs,
   serverTimestamp,
   query,
   where,
   orderBy,
-  limit
+  limit,
 } from "firebase/firestore";
 
 export default {
@@ -61,24 +62,48 @@ export default {
       return parts[parts.length - 1];
     };
 
-    const getCurrentSequenceAndLastValidMessage = async (documentId) => {
-      // Fetch the latest log to get the current sequence and last valid message
-      const logsQuery = query(
-        collection(db, "qr_scan_logs"),
-        where("scanData", "==", documentId),
-        orderBy("scanTime", "desc"),
-        limit(1)
-      );
+    const getLastStatusMessage = async (documentId) => {
+      try {
+        console.log(
+          "Fetching the last status message for documentId:",
+          documentId
+        );
 
-      const logsSnapshot = await getDocs(logsQuery);
-      if (!logsSnapshot.empty) {
+        const logsQuery = query(
+          collection(db, "qr_scan_logs"),
+          where("scanData", "==", documentId),
+          orderBy("scanTime", "desc"),
+          limit(1)
+        );
+
+        const logsSnapshot = await getDocs(logsQuery);
+
+        if (logsSnapshot.empty) {
+          console.warn("No logs found for documentId:", documentId);
+          return "no_logs"; // Explicitly return "no_logs" if no logs are found
+        }
+
         const lastLog = logsSnapshot.docs[0].data();
-        return {
-          sequence: lastLog.sequence,
-          lastMessage: lastLog.message
-        };
+        console.log("Last log retrieved:", lastLog);
+
+        // Check if the 'status' field exists and is not undefined
+        if ("status" in lastLog) {
+          console.log("Retrieved status field:", lastLog.status);
+          return lastLog.status;
+        } else {
+          console.error(
+            "Status field is missing in the retrieved document:",
+            lastLog
+          );
+          return "unknown_status"; // Return a specific value if 'status' is missing
+        }
+      } catch (error) {
+        console.error(
+          "Error fetching last status message from Firestore:",
+          error
+        );
+        return "error";
       }
-      return { sequence: 0, lastMessage: null };
     };
 
     const logScanToFirestore = async (decodedText) => {
@@ -99,49 +124,77 @@ export default {
         if (qrCodeDoc.exists()) {
           const qrCodeData = qrCodeDoc.data();
           const scanTime = new Date();
-          const expirationTime = new Date(qrCodeData.expirationTime.seconds * 1000);
+          const expirationTime = new Date(
+            qrCodeData.expirationTime.seconds * 1000
+          );
           const startTime = qrCodeData.startDate
             ? new Date(qrCodeData.startDate.seconds * 1000)
             : new Date(qrCodeData.createdAt.seconds * 1000);
 
-          let message = "successful entry";
+          let message = "";
           let additionalDetails = null;
+          let status = "";
+          const lastStatus = qrCodeData.latestStatus || "no_logs";
 
-          // Get the current sequence and last valid scan message
-          const { sequence: currentSequence, lastMessage } = await getCurrentSequenceAndLastValidMessage(documentId);
-          let newSequence = currentSequence;
+          console.log(
+            "Last recorded status from QR code document:",
+            lastStatus
+          );
 
-          // Validation: Check if the scan time is within allowed range
+          // Strict validation checks
           if (scanTime < startTime) {
-            message = "invalid";
+            message = "Access Denied: QR Code Not Active Yet.";
             additionalDetails = "Scan attempted before the allowed start time.";
-            newSequence += 1; // Start a new sequence due to invalid scan
+            status = "not_started";
           } else if (scanTime > expirationTime) {
-            // Allow one exit if last valid scan was a successful entry, otherwise mark as invalid
-            if (lastMessage === "successful entry") {
-              message = "QR Exit (expired)";
-              additionalDetails = "Exit allowed after expiration, following previous entry.";
+            if (lastStatus === "entry") {
+              message = "Access Granted: Exit Recorded (Expired).";
+              additionalDetails = "Exit allowed after expiration.";
+              status = "exit";
             } else {
-              message = "invalid";
+              message = "Access Denied: QR Code Expired.";
               additionalDetails = "QR code has expired.";
-              newSequence += 1; // Start a new sequence due to expiration
+              status = "expired";
             }
           } else {
-            // Fetch logs within the current sequence for this QR code to count successful scans
-            const sequenceLogsQuery = query(
-              collection(db, "qr_scan_logs"),
-              where("scanData", "==", decodedText),
-              where("sequence", "==", currentSequence),
-              where("message", "in", ["successful entry", "QR Exit"])
-            );
-            const sequenceLogsSnapshot = await getDocs(sequenceLogsQuery);
-            const scanCount = sequenceLogsSnapshot.size;
-
-            // Alternate message based on odd/even scan count
-            message = (scanCount + 1) % 2 === 1 ? "successful entry" : "QR Exit";
+            // Handle normal entry-exit cycle based on the last status
+            if (
+              lastStatus === "exit" ||
+              lastStatus === "expired" ||
+              lastStatus === "no_logs"
+            ) {
+              message = "Access Granted: Entry Successful!";
+              status = "entry";
+            } else if (lastStatus === "entry") {
+              message = "Access Granted: Exit Recorded!";
+              status = "exit";
+            } else {
+              message = "Access Denied: Unexpected Scan State.";
+              additionalDetails = "Unexpected status detected.";
+              status = "invalid";
+            }
           }
 
-          // Log the scan result to Firestore with the current sequence number
+          // Prevent logging repeated entries or exits
+          if (
+            (lastStatus === "entry" && status === "entry") ||
+            (lastStatus === "exit" && status === "exit")
+          ) {
+            message = `Access Denied: Repeated ${status} detected.`;
+            additionalDetails = `The QR code was already logged as ${status}.`;
+            status = "invalid";
+            console.log("Repeated scan detected. Status set to 'invalid'.");
+          }
+
+          // Update the latest status in the QR code document
+          await updateDoc(qrCodeDocRef, {
+            latestStatus: status,
+            lastScannedBy: currentUser.email,
+            lastScanTime: serverTimestamp(),
+          });
+          console.log("Updated QR code document with latest status:", status);
+
+          // Log the scan attempt in 'qr_scan_logs'
           await addDoc(collection(db, "qr_scan_logs"), {
             scannedBy: currentUser.email,
             qrCodeCreator: qrCodeData.createdBy,
@@ -151,25 +204,19 @@ export default {
             scanTime: serverTimestamp(),
             message,
             additionalDetails,
-            sequence: newSequence
+            status,
           });
 
-          if (message === "successful entry") {
-            modalMessage.value = "Access Granted: Entry Successful!";
-          } else if (message === "QR Exit" || message === "QR Exit (expired)") {
-            modalMessage.value = "Access Granted: Exit Recorded!";
-          } else {
-            modalMessage.value = `Access Denied: ${additionalDetails}`;
-          }
+          // Display modal message based on scan result
+          modalMessage.value = message;
           showModal.value = true;
-          console.log("QR scan logged successfully with message:", message);
         } else {
-          modalMessage.value = "QR code not found in the system.";
+          modalMessage.value = "QR Code Not Found in the System.";
           showModal.value = true;
         }
       } catch (error) {
         console.error("Error logging QR scan:", error);
-        modalMessage.value = "Error logging QR scan";
+        modalMessage.value = "Error Logging QR Scan.";
         showModal.value = true;
       }
     };

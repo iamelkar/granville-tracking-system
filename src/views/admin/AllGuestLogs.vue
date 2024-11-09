@@ -7,7 +7,7 @@
         <input
           v-model="searchQuery"
           type="text"
-          placeholder="Search by resident name..."
+          placeholder="Search by guest name..."
           class="search-input"
         />
 
@@ -31,24 +31,26 @@
         <table class="logs-table">
           <thead>
             <tr>
-              <th @click="sortLogs('residentName')">Resident Name</th>
+              <th @click="sortLogs('guestName')">Guest Name</th>
+              <th @click="sortLogs('creatorName')">Created By</th>
               <th @click="sortLogs('timestamp')">Timestamp</th>
-              <th @click="sortLogs('mode')">Mode</th>
-              <!-- <th>Status</th>
-              <th>Details</th> -->
+              <th @click="sortLogs('category')">Category</th>
+              <th>Status</th>
+              <th>Details</th>
             </tr>
           </thead>
           <tbody>
             <tr
               v-for="log in filteredLogs"
               :key="log.id"
-              :class="getRowClass(log.mode)"
+              :class="getRowClass(log.status)"
             >
-              <td>{{ log.residentName || "N/A" }}</td>
+              <td>{{ log.guestName || "N/A" }}</td>
+              <td>{{ log.creatorName || "Unknown" }}</td>
               <td>{{ log.timestamp }}</td>
-              <td>{{ log.mode }}</td>
-              <!-- <td>{{ log.message || "N/A" }}</td>
-              <td>{{ log.additionalDetails || "N/A" }}</td> -->
+              <td class="capitalize">{{ log.category || "QR Code" }}</td>
+              <td>{{ log.message || "N/A" }}</td>
+              <td>{{ log.additionalDetails || "N/A" }}</td>
             </tr>
           </tbody>
         </table>
@@ -60,7 +62,7 @@
 <script>
 import SidebarNav from "@/components/SidebarNav.vue";
 import { db } from "@/firebase";
-import { collection, getDocs } from "firebase/firestore";
+import { collection, getDocs, doc, getDoc } from "firebase/firestore";
 import { ref, onMounted, computed } from "vue";
 
 export default {
@@ -68,46 +70,78 @@ export default {
     SidebarNav,
   },
   setup() {
-    const rfidLogs = ref([]);
+    const qrLogs = ref([]);
     const searchQuery = ref("");
     const sortOption = ref("latest");
     const selectedDate = ref("");
 
-    const fetchRfidLogs = async () => {
+    // Function to extract creatorName from 'guest_qrcodes' collection
+    const fetchCreatorName = async (documentId) => {
+      try {
+        if (!documentId) {
+          console.warn("Invalid document ID:", documentId);
+          return "Unknown";
+        }
+
+        const qrCodeDocRef = doc(db, "guest_qrcodes", documentId);
+        const qrCodeDoc = await getDoc(qrCodeDocRef);
+
+        if (qrCodeDoc.exists()) {
+          const creatorName = qrCodeDoc.data().creatorName || "Unknown Creator";
+          return creatorName;
+        } else {
+          console.warn("No document found for document ID:", documentId);
+        }
+      } catch (error) {
+        console.error(
+          "Error fetching creatorName for document ID:",
+          documentId,
+          error
+        );
+      }
+
+      return "Unknown";
+    };
+
+    const fetchQrLogs = async () => {
       const logs = [];
-      const users = {};
 
       try {
-        // Fetch users to map RFID tags to resident names
-        const userSnapshot = await getDocs(collection(db, "users"));
-        userSnapshot.forEach((userDoc) => {
-          const data = userDoc.data();
-          if (data.rfidTag) {
-            users[data.rfidTag] = `${data.firstName} ${data.lastName}`;
-          }
-        });
+        const qrLogsSnapshot = await getDocs(collection(db, "qr_scan_logs"));
 
-        // Fetch RFID logs from Firestore
-        const rfidLogsSnapshot = await getDocs(collection(db, "all_rfid_logs"));
-        rfidLogsSnapshot.forEach((logDoc) => {
+        for (const logDoc of qrLogsSnapshot.docs) {
           const logData = logDoc.data();
-          const residentName = users[logData.rfidTag] || "Unknown Resident";
-          logs.push({
+
+          // Extract document ID from scanData URL
+          const documentId = logData.scanData
+            ? logData.scanData.split("/").pop()
+            : "";
+
+          // Fetch creatorName using the extracted document ID
+          const creatorName = await fetchCreatorName(documentId);
+
+          // Construct the log entry
+          const logEntry = {
             id: logDoc.id,
-            residentName,
-            timestamp: logData.timestamp
-              ? logData.timestamp.toDate().toLocaleString()
+            guestName: logData.guestName,
+            creatorName,
+            category: logData.category || "QR Code",
+            timestamp: logData.scanTime
+              ? logData.scanTime.toDate().toLocaleString()
               : "Unknown",
-            rawTimestamp: logData.timestamp,
-            mode: logData.mode || "RFID",
+            rawTimestamp: logData.scanTime,
             message: logData.message || "N/A",
             additionalDetails: logData.additionalDetails || null,
-          });
-        });
+            status: logData.status,
+          };
 
-        rfidLogs.value = logs;
+          logs.push(logEntry);
+        }
+
+        qrLogs.value = logs;
+        console.log("All QR logs processed and stored.");
       } catch (error) {
-        console.error("Error fetching RFID logs:", error);
+        console.error("Error fetching QR logs:", error);
       }
     };
 
@@ -118,8 +152,8 @@ export default {
         : null;
 
       // Filter logs based on search query and selected date
-      let result = rfidLogs.value.filter((log) => {
-        const name = (log.residentName || "").toLowerCase();
+      let result = qrLogs.value.filter((log) => {
+        const name = (log.guestName || "").toLowerCase();
         const matchesSearch = name.includes(search);
         const logDate = log.rawTimestamp
           ? log.rawTimestamp.toDate().toDateString()
@@ -143,16 +177,14 @@ export default {
       return result;
     });
 
-    const getRowClass = (mode) => {
-      if (!mode) return "log-unknown";
-      const lowerCaseMode = mode.toLowerCase();
-
-      if (lowerCaseMode.includes("entry")) return "log-entry";
-      if (lowerCaseMode.includes("exit")) return "log-exit";
-      return "log-other";
+    const getRowClass = (status) => {
+      if (status.toLowerCase().includes("entry")) return "log-entry";
+      if (status.toLowerCase().includes("exit")) return "log-exit";
+      if (status.toLowerCase().includes("expired")) return "log-invalid";
+      return "";
     };
 
-    onMounted(fetchRfidLogs);
+    onMounted(fetchQrLogs);
 
     return {
       searchQuery,
@@ -167,10 +199,14 @@ export default {
 
 <style>
 .main-content {
-  margin-left: 250px;
+  margin-left: 300px;
   padding: 20px;
-  background-color: #e0f7fa;
+  background-color: #00bfa5;
   height: 100vh;
+}
+
+.capitalize {
+  text-transform: capitalize;
 }
 
 .controls {
@@ -208,6 +244,7 @@ export default {
   padding: 10px;
   text-align: left;
   border: 1px solid #ddd;
+  cursor: pointer;
 }
 
 .logs-table th {
@@ -215,41 +252,28 @@ export default {
   font-weight: bold;
 }
 
-.logs-table tr.entry {
-  background-color: #e8f5e9;
-  color: #2e7d32;
+.logs-table tr:nth-child(even) {
+  background-color: #f9f9f9;
 }
 
-.logs-table tr.exit {
+/* Log Entry - Green */
+.log-entry {
+  background-color: #e8f5e9;
+  color: #2e7d32;
+  font-weight: bold;
+}
+
+/* Log Exit - Blue */
+.log-exit {
+  background-color: #e3f2fd;
+  color: #1e88e5;
+  font-weight: bold;
+}
+
+/* Log Invalid - Red */
+.log-invalid {
   background-color: #ffebee;
   color: #c62828;
-
-  /* Log Entry - Green */
-  .log-entry {
-    background-color: #e8f5e9;
-    color: #2e7d32;
-    font-weight: bold;
-  }
-
-  /* Log Exit - Blue */
-  .log-exit {
-    background-color: #e3f2fd;
-    color: #1e88e5;
-    font-weight: bold;
-  }
-
-  /* Log Other Modes - Yellow */
-  .log-other {
-    background-color: #fffde7;
-    color: #fbc02d;
-    font-weight: bold;
-  }
-
-  /* Log Unknown/Invalid Modes - Red */
-  .log-unknown {
-    background-color: #ffebee;
-    color: #c62828;
-    font-weight: bold;
-  }
+  font-weight: bold;
 }
 </style>

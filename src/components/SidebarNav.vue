@@ -9,18 +9,27 @@
       <!-- Navigation buttons -->
       <nav class="nav">
         <ul>
-          <li>
+          <!-- <li>
             <router-link to="/dashboard">Dashboard</router-link>
-          </li>
+          </li> -->
           <li>
             <router-link to="/users-management">Users Management</router-link>
           </li>
           <li>
-            <router-link to="/security-logs">Security Logs</router-link>
+            <router-link to="/all-qr-codes">QR Codes</router-link>
           </li>
           <li>
-            <router-link to="/system-management">System Management</router-link>
+            <router-link to="/security-logs">Resident Logs</router-link>
           </li>
+          <li>
+            <router-link to="/all-guest-logs">Guest Logs</router-link>
+          </li>
+          <li>
+            <router-link to="/generate-qr">QR Code Generate</router-link>
+          </li>
+          <!-- <li>
+            <router-link to="/system-management">System Management</router-link>
+          </li> -->
         </ul>
       </nav>
 
@@ -109,59 +118,6 @@
               />
             </div>
 
-            <!-- Car Plate Number Array -->
-            <div class="form-group">
-              <label for="carPlateNumber">Car Plate Number(s):</label>
-              <div class="car-plate-input">
-                <input
-                  type="text"
-                  v-model="carPlateInput"
-                  placeholder="Enter car plate number"
-                />
-                <button type="button" @click="addCarPlate">Add</button>
-              </div>
-              <ul>
-                <li
-                  v-for="(plate, index) in newResident.carPlateNumbers"
-                  :key="index"
-                >
-                  {{ plate }}
-                  <button @click="removeCarPlate(index)">Remove</button>
-                </li>
-              </ul>
-            </div>
-
-            <!-- Additional Fields -->
-            <div class="form-group">
-              <label for="vehicleType">Vehicle Type:</label>
-              <input
-                type="text"
-                v-model="newResident.vehicleType"
-                id="vehicleType"
-              />
-            </div>
-            <div class="form-group">
-              <label for="civilStatus">Civil Status:</label>
-              <select
-                v-model="newResident.civilStatus"
-                id="civilStatus"
-                required
-              >
-                <option value="single">Single</option>
-                <option value="married">Married</option>
-                <option value="separated">Separated</option>
-                <option value="widowed">Widowed</option>
-              </select>
-            </div>
-            <div class="form-group">
-              <label for="numberOfChildren">Number of Children:</label>
-              <input
-                type="number"
-                v-model="newResident.numberOfChildren"
-                id="numberOfChildren"
-                min="0"
-              />
-            </div>
             <div class="form-group">
               <label for="contactNumber">Contact Number:</label>
               <input
@@ -228,7 +184,6 @@ export default {
   setup() {
     const showModal = ref(false);
     const rfidTags = ref([]);
-    const carPlateInput = ref(""); // Input for individual car plate number
     const unsubscribe = ref(null);
     const newResident = ref({
       uid: "",
@@ -240,10 +195,6 @@ export default {
       phase: "",
       street: "",
       houseLotNumber: "",
-      carPlateNumbers: [], // Array for car plate numbers
-      vehicleType: "",
-      civilStatus: "",
-      numberOfChildren: 0,
       contactNumber: "",
       rfidTag: "",
       activeStatus: "true",
@@ -293,17 +244,6 @@ export default {
     //   }));
     // };
 
-    const addCarPlate = () => {
-      if (carPlateInput.value.trim()) {
-        newResident.value.carPlateNumbers.push(carPlateInput.value.trim());
-        carPlateInput.value = "";
-      }
-    };
-
-    const removeCarPlate = (index) => {
-      newResident.value.carPlateNumbers.splice(index, 1);
-    };
-
     const addResident = async () => {
       try {
         if (!newResident.value.uid) {
@@ -333,10 +273,6 @@ export default {
           phase: newResident.value.phase,
           street: newResident.value.street,
           houseLotNumber: newResident.value.houseLotNumber,
-          carPlateNumbers: newResident.value.carPlateNumbers,
-          vehicleType: newResident.value.vehicleType,
-          civilStatus: newResident.value.civilStatus,
-          numberOfChildren: newResident.value.numberOfChildren,
           contactNumber: newResident.value.contactNumber,
           rfidTag: newResident.value.rfidTag,
           activeStatus: newResident.value.activeStatus === "true",
@@ -387,11 +323,8 @@ export default {
       showModal,
       newResident,
       rfidTags,
-      carPlateInput,
       openModal,
       closeModal,
-      addCarPlate,
-      removeCarPlate,
       addResident,
       handleSignOut,
     };

@@ -9,7 +9,7 @@
         <p>No scans found for your account</p>
       </div>
 
-      <div v-else>
+      <div v-else class="table-container">
         <table>
           <thead>
             <tr>
@@ -36,6 +36,8 @@
                   {{
                     log.message === "successful entry"
                       ? "Access Granted"
+                      : log.message === "QR Exit"
+                      ? "Exit Recorded"
                       : "Access Denied"
                   }}
                 </span>
@@ -70,9 +72,9 @@ export default {
   },
   methods: {
     getMessageClass(message) {
-      return message === "successful entry"
-        ? "access-granted"
-        : "access-failed";
+      if (message === "successful entry") return "access-granted";
+      if (message === "QR Exit") return "exit-recorded";
+      return "access-failed";
     },
   },
   async created() {
@@ -112,6 +114,11 @@ export default {
   font-weight: bold;
 }
 
+.exit-recorded {
+  color: blue; /* Example color */
+  font-weight: bold;
+}
+
 .main-content {
   margin-left: 250px;
   padding: 20px;
@@ -122,6 +129,13 @@ export default {
 h1 {
   font-size: 36px;
   color: #333;
+}
+
+.table-container {
+  max-height: 90vh; /* Set a fixed height for scrollable area */
+  overflow-y: auto;
+  border: 1px solid #ccc;
+  background-color: white;
 }
 
 table {
