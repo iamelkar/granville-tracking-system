@@ -1,5 +1,14 @@
 <template>
-  <div class="sidebar" @click.self="closeSidebar">
+  <!-- Sidebar Toggle Button for Mobile -->
+  <button ref="toggleButton" class="sidebar-toggle" @click="toggleSidebar">
+    ☰
+  </button>
+
+  <div
+    ref="sidebar"
+    :class="['sidebar', { active: isSidebarVisible }]"
+    @click.stop
+  >
     <!-- Welcome message -->
     <div class="welcome">
       <h2>Welcome, Security!</h2>
@@ -21,6 +30,9 @@
         <!-- <li>
           <router-link to="/user-logs">Logs</router-link>
         </li> -->
+        <li>
+          <router-link to="/contact-us">Report</router-link>
+        </li>
       </ul>
     </nav>
 
@@ -33,17 +45,37 @@
 <script>
 import { auth } from "@/firebase";
 import { signOut } from "firebase/auth";
+import { ref, onMounted, onBeforeUnmount } from "vue";
 import { useRouter } from "vue-router";
 
 export default {
-  // props: ['showSidebar'],
-  data() {
-    return {
-      firstName: "Kharhyll",
-    };
-  },
   setup() {
+    const isSidebarVisible = ref(false);
+    const sidebar = ref(null);
+    const toggleButton = ref(null);
     const router = useRouter();
+
+    const toggleSidebar = () => {
+      isSidebarVisible.value = !isSidebarVisible.value;
+      if (isSidebarVisible.value) {
+        document.addEventListener("click", handleOutsideClick);
+      } else {
+        document.removeEventListener("click", handleOutsideClick);
+      }
+    };
+
+    const handleOutsideClick = (event) => {
+      // Use refs instead of this.$el
+      if (
+        sidebar.value &&
+        toggleButton.value &&
+        !sidebar.value.contains(event.target) &&
+        !toggleButton.value.contains(event.target)
+      ) {
+        isSidebarVisible.value = false;
+        document.removeEventListener("click", handleOutsideClick);
+      }
+    };
 
     const handleSignOut = async () => {
       try {
@@ -55,22 +87,51 @@ export default {
         alert(`Error signing out: ${error.message}`);
       }
     };
+
+    onBeforeUnmount(() => {
+      document.removeEventListener("click", handleOutsideClick);
+    });
+
     return {
+      isSidebarVisible,
+      sidebar,
+      toggleButton,
+      toggleSidebar,
       handleSignOut,
     };
   },
 };
 </script>
 
-<style>
+<style scoped>
 .sidebar {
   width: 300px;
   height: 100vh;
   background-color: #2c3e50;
   color: white;
-  display: flex;
-  flex-direction: column;
-  padding: 20px;
+  position: fixed;
+  left: 0;
+  top: 0;
+  z-index: 1000;
+  transition: transform 0.3s ease-in-out;
+}
+
+.sidebar.active {
+  transform: translateX(0);
+}
+
+/* Sidebar Toggle Button */
+.sidebar-toggle {
+  display: none;
+  position: absolute;
+  top: 20px;
+  left: 20px;
+  background-color: #3498db;
+  color: white;
+  padding: 10px;
+  border: none;
+  border-radius: 5px;
+  cursor: pointer;
 }
 
 .welcome {
@@ -134,5 +195,19 @@ export default {
 
 .log-out button:hover {
   background-color: #c0392b;
+}
+
+/* Mobile View Styles */
+@media (max-width: 768px) {
+  .sidebar-toggle {
+    display: block;
+  }
+  .sidebar {
+    transform: translateX(-100%);
+    width: 250px;
+  }
+  .sidebar.active {
+    transform: translateX(0);
+  }
 }
 </style>

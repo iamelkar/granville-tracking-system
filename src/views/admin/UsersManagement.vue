@@ -48,27 +48,29 @@
         </div>
 
         <div class="user-list">
-          <table>
-            <thead>
-              <tr>
-                <th>Full Name</th>
-                <th>Role</th>
-                <th>RFID Tag</th>
-                <th>Actions</th>
-              </tr>
-            </thead>
-            <tbody>
-              <tr v-for="user in filteredUsers" :key="user.id">
-                <td class="info">{{ user.firstName }} {{ user.lastName }}</td>
-                <td class="info">{{ user.role }}</td>
-                <td class="info">{{ user.rfidTag }}</td>
-                <td>
-                  <button @click="openEditModal(user)">Edit</button>
-                  <button @click="deleteUser(user.id)">Delete</button>
-                </td>
-              </tr>
-            </tbody>
-          </table>
+          <div class="table-container">
+            <table>
+              <thead>
+                <tr>
+                  <th>Full Name</th>
+                  <th>Role</th>
+                  <th>RFID Tag</th>
+                  <th>Actions</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr v-for="user in filteredUsers" :key="user.id">
+                  <td class="info">{{ user.firstName }} {{ user.lastName }}</td>
+                  <td class="info">{{ user.role }}</td>
+                  <td class="info">{{ user.rfidTag }}</td>
+                  <td>
+                    <button @click="openEditModal(user)">Edit</button>
+                    <button @click="deleteUser(user.id)">Delete</button>
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
         </div>
 
         <!-- Edit User modal-->
@@ -323,8 +325,30 @@ export default {
   padding: 20px;
   border-radius: 10px;
   box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+  height: calc(100vh - 40px);
+  overflow: hidden;
+}
+.table-container {
+  max-height: 100vh;
+  overflow-y: auto; /* Enable vertical scrolling */
+  overflow-x: auto; /* Enable horizontal scrolling if needed */
+  border: 1px solid #ddd; /* Optional: Add a border around the table container */
+}
+.table-container table {
+  width: 100%; /* Ensure the table takes the full width of the container */
+  border-collapse: collapse;
+}
+.table-container th,
+.table-container td {
+  padding: 10px;
+  text-align: left;
+  border: 1px solid #ddd;
 }
 
+.table-container th {
+  background-color: #f4f4f4;
+  font-weight: bold;
+}
 .modal-overlay {
   position: fixed;
   top: 0;
@@ -485,5 +509,64 @@ export default {
 
 .user-list button:hover {
   opacity: 0.8;
+}
+
+/* Mobile View Styles */
+@media (max-width: 768px) {
+  .sidebar {
+    transform: translateX(-100%);
+  }
+
+  .sidebar.active {
+    transform: translateX(0);
+  }
+
+  .main-content {
+    margin-left: 0;
+    width: 100%;
+  }
+
+  .main-content.full-width {
+    margin-left: 0;
+    width: 100%;
+  }
+  .user-management-content {
+    /* width: 100%; */
+    margin-left: 0px;
+    height: 92vh;
+    padding: 5px;
+  }
+
+  .table-container {
+    max-height: 70vh;
+  }
+  .role-menu button {
+    margin-right: 10px;
+    padding: 5px;
+    font-size: 0.9rem;
+  }
+
+  .profile,
+  .system-alerts,
+  .recent-activities {
+    width: 100%;
+    max-width: 100%;
+  }
+
+  .dashboard-grid {
+    width: 100%;
+    margin-left: 0px;
+  }
+  h2 {
+    font-size: 1.2rem;
+  }
+
+  .info {
+    font-size: 0.9rem;
+  }
+
+  .sidebar-toggle {
+    display: block;
+  }
 }
 </style>

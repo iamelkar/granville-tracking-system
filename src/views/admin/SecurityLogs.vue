@@ -165,18 +165,17 @@ export default {
 };
 </script>
 
-<style>
+<style scoped>
 .main-content {
-  margin-left: 250px;
+  margin-left: 300px;
   padding: 20px;
-  background-color: #e0f7fa;
-  height: 100vh;
 }
 
 .controls {
   margin-bottom: 15px;
   display: flex;
   gap: 10px;
+  overflow-y: auto;
 }
 
 .date-input {
@@ -190,10 +189,12 @@ export default {
 }
 
 .table-container {
-  max-height: 800px;
+  max-height: 85vh;
   overflow-y: auto;
+  overflow-x: auto;
   border: 1px solid #ddd;
   background-color: white;
+  height: calc(100vh - 100px);
 }
 
 .logs-table {
@@ -250,6 +251,34 @@ export default {
     background-color: #ffebee;
     color: #c62828;
     font-weight: bold;
+  }
+}
+
+/* Mobile View Styles */
+@media (max-width: 768px) {
+  .sidebar {
+    transform: translateX(-100%);
+  }
+
+  .sidebar.active {
+    transform: translateX(0);
+  }
+
+  .main-content {
+    margin-left: 0;
+    width: 100%;
+  }
+  .table-container {
+    max-height: 85vh;
+    overflow-y: auto; /* Enable vertical scrolling */
+    overflow-x: auto;
+  }
+
+  h2 {
+    font-size: 1.2rem;
+  }
+  .sidebar-toggle {
+    display: block;
   }
 }
 </style>

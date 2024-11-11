@@ -1,10 +1,9 @@
 <template>
-  <div>
-    <!-- Fixed Sidebar on the left -->
+  <div class="dashboard">
     <UserSideNav />
 
     <!-- Main content on the right -->
-    <div class="main-content">
+    <div class="main-content" @click="handleOutsideClick">
       <!-- <h1>THIS IS THE USER DASHBOARD</h1> -->
       <div class="container">
         <div class="dashboard-grid">
@@ -33,6 +32,7 @@
             </div>
           </div>
           <br />
+
           <div class="system-alerts">
             <h2>System Alerts ⚠️</h2>
           </div>
@@ -48,7 +48,7 @@
 
 <script>
 import UserSideNav from "@/components/user/UserSideNav.vue";
-import { ref, onMounted } from "vue";
+import { ref, onMounted, onBeforeUnmount } from "vue";
 import { db, storage } from "@/firebase";
 import { doc, getDoc } from "firebase/firestore";
 import { getAuth, onAuthStateChanged } from "firebase/auth";
@@ -124,7 +124,7 @@ export default {
 };
 </script>
 
-<style>
+<style scoped>
 /* General reset to avoid padding/margin issues */
 * {
   margin: 0;
@@ -139,26 +139,76 @@ body {
 
 /* Sidebar styles */
 .sidebar {
-  position: fixed;
-  top: 0;
-  left: 0;
-  width: 300px; /* Fixed width of the sidebar */
-  height: 100vh; /* Full viewport height */
+  width: 300px;
+  height: 100vh;
   background-color: #2c3e50;
   color: white;
-  padding: 20px;
-  display: flex;
-  flex-direction: column;
-  justify-content: space-between;
-  z-index: 1000; /* Keeps the sidebar above the main content */
+  position: fixed;
+  left: 0;
+  top: 0;
+  transition: transform 0.3s ease-in-out;
+  z-index: 1000;
+}
+
+.sidebar.active {
+  transform: translateX(0);
+}
+
+.sidebar-toggle {
+  display: none;
+  position: absolute;
+  top: 20px;
+  left: 20px;
+  background-color: #3498db;
+  color: white;
+  padding: 10px;
+  border: none;
+  border-radius: 5px;
+  cursor: pointer;
 }
 
 /* Main content area */
 .main-content {
-  margin-left: 250px; /* Make room for the fixed sidebar */
+  margin-left: 300px; /* Make room for the fixed sidebar */
   padding: 20px;
   background-color: #00bfa5;
   height: 100vh;
+  transition: margin-left 0.3s ease-in-out;
+}
+
+/* Container to wrap both sections */
+.container {
+  display: flex;
+  justify-content: space-between;
+  width: 100%;
+  height: 100%; /* Full height for layout purposes */
+}
+
+/* Dashboard grid for the left side */
+.dashboard-grid {
+  display: flex;
+  flex-direction: column;
+  width: 30%; /* Left side takes 30% of the width */
+  margin-left: 50px;
+}
+
+/* Profile and system-alerts classes aligned in column */
+.profile,
+.system-alerts {
+  /* margin-bottom: 20px; Add some space between items */
+  padding: 20px;
+  background-color: #f0f0f0; /* Light background for clarity */
+  border-radius: 8px;
+  height: 100%;
+}
+
+/* Recent activities to take the full right side */
+.recent-activities {
+  width: 70%; /* Right side takes 70% of the width */
+  padding: 20px;
+  background-color: #f0f0f0; /* Light background for clarity */
+  border-radius: 8px;
+  margin-left: 20px;
 }
 
 .profile-info {
@@ -166,19 +216,23 @@ body {
   flex-direction: column; /* Stack items vertically */
   align-items: flex-start; /* Align items to the left */
   justify-content: center; /* Center content within the profile */
-  padding: 10px; /* Padding for spacing inside the container */
+  padding: 10px;
 }
 
 .profile-picture {
   display: flex;
   flex-direction: column;
   align-items: center;
-  margin-bottom: 15px;
+  justify-content: center;
+  width: 100%; /* Make it responsive to the parent width */
+  max-width: 200px; /* Set a maximum width */
+  margin: 0 auto;
 }
 
 .profile-picture img {
-  width: 120px;
-  height: 120px;
+  width: 100%;
+  height: auto;
+  max-width: 120px; /* Ensure it doesn't get too large */
   border-radius: 50%;
   object-fit: cover;
   margin-bottom: 10px;
@@ -188,6 +242,7 @@ body {
 .profile-picture input[type="file"] {
   display: block;
   margin-top: 10px;
+  width: 80px;
 }
 
 .profile-details {
@@ -198,11 +253,13 @@ body {
   width: 100%; /* Take full width inside profile */
   margin-top: 10px; /* Add space between the heading and details */
   text-align: left;
+  font-size: 16px; /* Default font size */
+  line-height: 1.4;
 }
 
 .profile-details p {
   margin: 8px 0; /* Space between paragraphs */
-  font-size: 16px; /* Slightly larger font for readability */
+  font-size: 1rem; /* Slightly larger font for readability */
 }
 
 .profile-details strong {
@@ -212,11 +269,14 @@ body {
 
 .profile {
   padding: 20px;
-  background-color: #f0f0f0; /* Light background for clarity */
+  background-color: #f0f0f0;
   border-radius: 8px;
-  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1); /* Add subtle shadow */
-  height: auto; /* Let it adjust based on content */
-  margin-bottom: 20px; /* Add space between profile and other elements */
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+  height: auto;
+  margin-bottom: 20px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
 }
 
 h2 {
@@ -231,14 +291,66 @@ h1 {
   color: #333;
 }
 
-/* Additional styling for responsiveness */
 @media (max-width: 768px) {
   .sidebar {
-    width: 200px; /* Adjust sidebar width on smaller screens */
+    transform: translateX(-100%);
+  }
+
+  .sidebar.active {
+    transform: translateX(0);
   }
 
   .main-content {
-    margin-left: 200px; /* Adjust content margin accordingly */
+    margin-left: 0;
+  }
+
+  .sidebar-toggle {
+    display: block;
+  }
+
+  .profile {
+    margin-bottom: 0px;
+    padding: 15px;
+  }
+  .profile-info {
+    padding: 0px;
+    width: 140px;
+  }
+
+  .profile-picture {
+    max-width: 100px; /* Adjust max width for mobile view */
+  }
+
+  .profile-picture img {
+    max-width: 60px;
+    max-height: 60px;
+  }
+
+  .dashboard-grid {
+    margin-left: 0px;
+    width: 49%;
+  }
+
+  .recent-activities {
+    width: 49%;
+    margin-left: 0;
+  }
+
+  h2 {
+    font-size: 2vh;
+  }
+
+  .profile-details {
+    font-size: 12px;
+    padding: 8px;
+  }
+
+  .profile-details p {
+    font-size: 0.8rem;
+  }
+
+  .profile-details strong {
+    font-size: 0.85rem;
   }
 }
 </style>

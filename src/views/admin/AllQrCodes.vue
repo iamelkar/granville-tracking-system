@@ -149,10 +149,12 @@ export default {
 }
 
 .table-container {
-  max-height: 600px;
+  max-height: 85vh;
   overflow-y: auto;
+  overflow-x: auto;
   border: 1px solid #ddd;
-  background-color: #fff;
+  background-color: white;
+  height: calc(100vh - 100px);
 }
 
 .qrcodes-table {
@@ -174,5 +176,44 @@ export default {
 
 .qrcodes-table tr:nth-child(even) {
   background-color: #f9f9f9;
+}
+
+/* Mobile View Styles */
+@media (max-width: 768px) {
+  .sidebar {
+    transform: translateX(-100%);
+  }
+
+  .sidebar.active {
+    transform: translateX(0);
+  }
+
+  .main-content {
+    margin-left: 0;
+    width: 100%;
+  }
+
+  .main-content.full-width {
+    margin-left: 0;
+    width: 100%;
+  }
+  .user-management-content {
+    /* width: 100%; */
+    margin-left: 0px;
+    height: auto;
+  }
+
+  .table-container {
+    max-height: 85vh;
+    overflow-y: auto; /* Enable vertical scrolling */
+    overflow-x: auto;
+  }
+
+  h2 {
+    font-size: 1.2rem;
+  }
+  .sidebar-toggle {
+    display: block;
+  }
 }
 </style>

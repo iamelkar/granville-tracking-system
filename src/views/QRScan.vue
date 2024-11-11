@@ -3,7 +3,7 @@
     <SecuritySidebar />
 
     <div class="main-content">
-      <h2>QR Code Scanner</h2>
+      <h2 class="page-title">QR Code Scanner</h2>
 
       <div id="qr-reader" class="qr-reader"></div>
 
@@ -303,5 +303,20 @@ export default {
   padding: 20px;
   border-radius: 8px;
   box-shadow: 0px 4px 12px rgba(0, 0, 0, 0.1);
+}
+
+/* Additional styling for responsiveness */
+@media (max-width: 768px) {
+  .main-content {
+    margin-left: 0px;
+  }
+  .qr-reader {
+    margin-top: 100px;
+  }
+
+  .page-title {
+    margin-top: 30px;
+    margin-left: 100px;
+  }
 }
 </style>

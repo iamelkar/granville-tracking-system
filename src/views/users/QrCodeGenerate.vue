@@ -301,7 +301,7 @@ export default {
 };
 </script>
 
-<style>
+<style scoped>
 /* General reset to avoid padding/margin issues */
 * {
   margin: 0;
@@ -419,7 +419,8 @@ button:hover {
   }
 
   .main-content {
-    margin-left: 200px; /* Adjust content margin accordingly */
+    margin-left: 0px;
+    width: 100%;
   }
 }
 </style>

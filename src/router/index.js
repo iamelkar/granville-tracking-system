@@ -16,6 +16,7 @@ import ViewQRCode from "@/views/ViewQRCode.vue";
 import QRScan from "@/views/QRScan.vue";
 import AllGuestLogs from "@/views/admin/AllGuestLogs.vue";
 import AllQrCodes from "@/views/admin/AllQrCodes.vue";
+import MyGuestLogs from "@/views/users/MyGuestLogs.vue";
 
 const routes = [
   {
@@ -76,6 +77,11 @@ const routes = [
     path: "/my-logs",
     name: "my-logs",
     component: MyLogs,
+  },
+  {
+    path: "/my-guest-logs",
+    name: "my-guest-logs",
+    component: MyGuestLogs,
   },
   {
     path: "/user-notification",

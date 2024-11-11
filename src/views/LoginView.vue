@@ -3,9 +3,9 @@
     <div class="login-container">
       <form @submit.prevent="handleLogin">
         <input v-model="email" type="email" placeholder="EMAIL" />
-        <br>
+        <br />
         <input v-model="password" type="password" placeholder="PASSWORD" />
-        <br>
+        <br />
 
         <label for="role">Role:</label>
         <select v-model="role" id="role">
@@ -13,39 +13,39 @@
           <option value="resident">Resident</option>
           <option value="security">Security</option>
         </select>
-        <br><br>
+        <br /><br />
 
         <a href="#">Forgot password?</a>
-        <br><br>
+        <br /><br />
 
         <button type="submit">LOGIN</button>
       </form>
-      <p v-if="error" class="error"> {{ error }}</p>
+      <p v-if="error" class="error">{{ error }}</p>
 
       <!-- Warning modal-->
-       <div v-if="showModal" class="modal">
-        <p> {{  modalMessage }}</p>
+      <div v-if="showModal" class="modal">
+        <p>{{ modalMessage }}</p>
         <button @click="closeModal">OK</button>
-       </div>
+      </div>
     </div>
   </div>
 </template>
 
 <script>
-import { ref } from 'vue';
-import { auth, db } from '@/firebase';
-import { signInWithEmailAndPassword, signOut } from 'firebase/auth';
-import { doc, getDoc } from 'firebase/firestore';
-import { useRouter } from 'vue-router';
+import { ref } from "vue";
+import { auth, db } from "@/firebase";
+import { signInWithEmailAndPassword, signOut } from "firebase/auth";
+import { doc, getDoc } from "firebase/firestore";
+import { useRouter } from "vue-router";
 
 export default {
   setup() {
-    const email = ref('');
-    const password = ref('');
-    const role = ref('resident'); // Default role
+    const email = ref("");
+    const password = ref("");
+    const role = ref("resident"); // Default role
     const error = ref(null);
     const showModal = ref(false); // Controls modal visibility
-    const modalMessage = ref(''); // Modal message
+    const modalMessage = ref(""); // Modal message
 
     const router = useRouter();
 
@@ -57,30 +57,34 @@ export default {
     const handleLogin = async () => {
       try {
         // Sign in the user with Firebase Authentication
-        const userCredential = await signInWithEmailAndPassword(auth, email.value, password.value);
+        const userCredential = await signInWithEmailAndPassword(
+          auth,
+          email.value,
+          password.value
+        );
         const user = userCredential.user;
 
-        console.log('Logged-in user UID:', user.uid);
+        console.log("Logged-in user UID:", user.uid);
 
         // Fetch the user's role from Firestore using the user UID
-        const userDocRef = doc(db, 'users', user.uid); // DocumentReference
+        const userDocRef = doc(db, "users", user.uid); // DocumentReference
         const userDoc = await getDoc(userDocRef); // DocumentSnapshot
 
         if (userDoc.exists()) {
           const userData = userDoc.data();
-          console.log('User data:', userData);
+          console.log("User data:", userData);
 
           // Check if the role matches
           if (userData.role === role.value) {
             console.log(`Successful "${role.value}" user login`);
 
             // Redirect based on role
-            if (role.value === 'admin') {
-              router.push({ name: 'dashboard' });
-            } else if (role.value === 'resident') {
-              router.push({ name: 'user-dashboard' });
-            } else if (role.value === 'security') {
-              router.push({ name: 'security-dashboard' });
+            if (role.value === "admin") {
+              router.push({ name: "users-management" });
+            } else if (role.value === "resident") {
+              router.push({ name: "user-dashboard" });
+            } else if (role.value === "security") {
+              router.push({ name: "security-dashboard" });
             }
           } else {
             // Role mismatch, show modal and sign the user out
@@ -90,18 +94,19 @@ export default {
           }
         } else {
           // User data not found in Firestore
-          modalMessage.value = 'User data not found in Firestore!';
+          modalMessage.value = "User data not found in Firestore!";
           showModal.value = true;
           await signOut(auth); // Sign out the user since no Firestore data is found
         }
       } catch (err) {
-        console.error('Login failed:', err.message);
+        console.error("Login failed:", err.message);
 
         // Display appropriate error message
-        if (err.code === 'auth/user-not-found') {
-          modalMessage.value = 'Account does not exist. Please check your email.';
-        } else if (err.code === 'auth/wrong-password') {
-          modalMessage.value = 'Incorrect password. Please try again.';
+        if (err.code === "auth/user-not-found") {
+          modalMessage.value =
+            "Account does not exist. Please check your email.";
+        } else if (err.code === "auth/wrong-password") {
+          modalMessage.value = "Incorrect password. Please try again.";
         } else {
           modalMessage.value = `Login failed: ${err.message}`;
         }
@@ -123,7 +128,6 @@ export default {
   },
 };
 </script>
-
 
 <style scoped>
 .login-container {

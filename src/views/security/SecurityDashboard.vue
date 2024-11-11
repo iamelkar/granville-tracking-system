@@ -1,10 +1,10 @@
 <template>
   <div>
     <!-- Fixed Sidebar on the left -->
-    <SecuritySidebar />
+    <SecuritySidebar ref="sidebar" />
 
     <!-- Main content on the right -->
-    <div class="main-content">
+    <div class="main-content" @click="handleOutsideClick">
       <div class="container">
         <div class="dashboard-grid">
           <div class="profile">
@@ -82,6 +82,54 @@ import {
 export default {
   components: {
     SecuritySidebar,
+  },
+  data() {
+    return {
+      isSidebarVisible: false,
+    };
+  },
+  methods: {
+    toggleSidebar() {
+      this.isSidebarVisible = !this.isSidebarVisible;
+      if (this.isSidebarVisible) {
+        document.addEventListener("click", this.handleOutsideClick);
+      } else {
+        document.removeEventListener("click", this.handleOutsideClick);
+      }
+    },
+
+    handleOutsideClick(event) {
+      const sidebar = this.$refs.sidebar.$el;
+      const toggleButton = document.querySelector(".sidebar-toggle");
+
+      // Check if the click was outside the sidebar and toggle button
+      if (!sidebar || !toggleButton) {
+        console.warn("Sidebar or toggle button reference is missing.");
+        return;
+      }
+
+      // Check if the click was outside the sidebar and toggle button
+      if (
+        !sidebar.contains(event.target) &&
+        !toggleButton.contains(event.target)
+      ) {
+        this.isSidebarVisible = false;
+        document.removeEventListener("click", this.handleOutsideClick);
+      }
+      console.log("Clicked element:", event.target);
+      console.log("Sidebar element:", sidebar);
+    },
+  },
+  onBeforeUnmount() {
+    document.removeEventListener("click", this.handleOutsideClick);
+  },
+  mounted() {
+    // Ensure the sidebar reference is ready
+    if (this.$refs.sidebarRef) {
+      console.log("Sidebar reference is available:", this.$refs.sidebarRef);
+    } else {
+      console.warn("Sidebar reference is not available.");
+    }
   },
   setup() {
     const user = ref({});
@@ -281,8 +329,7 @@ export default {
 };
 </script>
 
-<style>
-/* General reset to avoid padding/margin issues */
+<style scoped>
 * {
   margin: 0;
   padding: 0;
@@ -312,10 +359,36 @@ body {
 
 /* Main content area */
 .main-content {
-  margin-left: 250px; /* Make room for the fixed sidebar */
+  margin-left: 300px; /* Make room for the fixed sidebar */
   padding: 20px;
   background-color: #00bfa5;
   height: 100vh;
+}
+
+.dashboard-grid {
+  display: flex;
+  flex-direction: column;
+  width: 30%; /* Left side takes 30% of the width */
+  margin-left: 50px;
+}
+
+/* Profile and system-alerts classes aligned in column */
+.profile,
+.system-alerts {
+  /* margin-bottom: 20px; Add some space between items */
+  padding: 20px;
+  background-color: #f0f0f0; /* Light background for clarity */
+  border-radius: 8px;
+  height: 100%;
+}
+
+/* Recent activities to take the full right side */
+.recent-activities {
+  width: 70%; /* Right side takes 70% of the width */
+  padding: 20px;
+  background-color: #f0f0f0; /* Light background for clarity */
+  border-radius: 8px;
+  margin-left: 20px;
 }
 
 h1 {
@@ -367,6 +440,27 @@ h1 {
   background-color: #eb7d51;
 }
 
+.profile-details {
+  text-align: left; /* Align text to the left */
+  line-height: 1.6; /* Improve line spacing */
+  font-size: 16px; /* Set font size for better readability */
+  color: #333; /* Dark gray text color for contrast */
+  padding: 10px 15px; /* Add padding for a clean look */
+  background-color: #ffffff; /* Light background color for contrast */
+  border-radius: 8px; /* Slightly rounded corners */
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1); /* Subtle shadow */
+}
+
+.profile-details p {
+  margin-bottom: 8px; /* Add space between paragraphs */
+  font-size: 15px; /* Slightly smaller font size for paragraphs */
+}
+
+.profile-details strong {
+  font-weight: bold;
+  color: #000; /* Dark color for labels */
+}
+
 .profile-pic {
   width: 350px;
   height: 350px;
@@ -393,12 +487,30 @@ button {
 }
 /* Additional styling for responsiveness */
 @media (max-width: 768px) {
-  .sidebar {
-    width: 200px; /* Adjust sidebar width on smaller screens */
+  .main-content {
+    margin-left: 0px; /* Adjust content margin accordingly */
+    width: 100%;
   }
 
-  .main-content {
-    margin-left: 200px; /* Adjust content margin accordingly */
+  .profile,
+  .system-alerts,
+  .recent-activities {
+    width: 100%;
+    max-width: 100%;
+  }
+
+  .dashboard-grid {
+    width: 100%;
+    margin-left: 0px;
+  }
+  h2 .profile-details {
+    font-size: 14px; /* Reduce font size on smaller screens */
+    line-height: 1.4;
+    padding: 8px; /* Reduce padding for compact view */
+  }
+
+  .profile-details p {
+    margin-bottom: 6px;
   }
 }
 </style>

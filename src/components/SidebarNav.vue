@@ -1,7 +1,10 @@
 <template>
   <div>
-    <div class="sidebar" @click.self="closeSidebar">
-      <!-- Welcome message -->
+    <!-- Sidebar Toggle Button for Mobile -->
+    <button class="sidebar-toggle" @click="toggleSidebar">☰</button>
+
+    <!-- Sidebar -->
+    <div :class="['sidebar', { active: isSidebarVisible }]" @click.stop>
       <div class="welcome">
         <h2>Welcome!</h2>
       </div>
@@ -181,6 +184,38 @@ import { useRouter } from "vue-router";
 
 export default {
   name: "SidebarNav",
+  data() {
+    return {
+      isSidebarVisible: false,
+    };
+  },
+  methods: {
+    toggleSidebar() {
+      this.isSidebarVisible = !this.isSidebarVisible;
+      if (this.isSidebarVisible) {
+        document.addEventListener("click", this.handleOutsideClick);
+      } else {
+        document.removeEventListener("click", this.handleOutsideClick);
+      }
+    },
+    handleOutsideClick(event) {
+      const sidebar = this.$el.querySelector(".sidebar");
+      const toggleButton = this.$el.querySelector(".sidebar-toggle");
+
+      // Check if the click was outside the sidebar and toggle button
+      if (
+        !sidebar.contains(event.target) &&
+        !toggleButton.contains(event.target)
+      ) {
+        this.isSidebarVisible = false;
+        document.removeEventListener("click", this.handleOutsideClick);
+      }
+    },
+  },
+  beforeUnmount() {
+    // Clean up the event listener when the component is unmounted
+    document.removeEventListener("click", this.handleOutsideClick);
+  },
   setup() {
     const showModal = ref(false);
     const rfidTags = ref([]);
@@ -339,10 +374,42 @@ export default {
   height: 100vh;
   background-color: #2c3e50;
   color: white;
-  display: flex;
-  flex-direction: column;
-  padding: 20px;
-  align-items: center;
+  position: fixed;
+  left: 0;
+  top: 0;
+  z-index: 1000;
+  transition: transform 0.3s ease-in-out;
+}
+
+/* Sidebar Toggle Button */
+.sidebar-toggle {
+  display: none;
+  position: absolute;
+  top: 20px;
+  left: 20px;
+  background-color: rgba(52, 152, 219, 0.4);
+  color: rgba(255, 255, 255, 0.7);
+  padding: 10px;
+  border: none;
+  border-radius: 5px;
+  cursor: pointer;
+  z-index: 1100;
+  transition: background-color 0.3s ease, color 0.3s ease;
+  opacity: 0.8;
+}
+
+/* Hover and active state */
+.sidebar-toggle:hover,
+.sidebar-toggle:focus {
+  background-color: rgba(52, 152, 219, 0.8);
+  color: rgba(255, 255, 255, 1);
+  opacity: 1;
+}
+
+/* Optional active state for when the button is clicked */
+.sidebar-toggle:active {
+  background-color: rgba(41, 128, 185, 0.9);
+  color: white;
 }
 
 .welcome {
@@ -488,5 +555,21 @@ export default {
 .form-actions button:last-of-type {
   background-color: #e74c3c;
   color: white;
+}
+
+/* Responsive Styles for Mobile Screens */
+@media (max-width: 768px) {
+  .sidebar {
+    transform: translateX(-100%);
+    width: 250px;
+  }
+
+  .sidebar.active {
+    transform: translateX(0);
+  }
+
+  .sidebar-toggle {
+    display: block;
+  }
 }
 </style>
