@@ -27,24 +27,37 @@
               guestDetails.category === 'worker'
             "
           >
-            <label>Entry Type:</label>
-            <div>
-              <label>
-                <input
-                  type="radio"
-                  value="individual"
-                  v-model="guestDetails.entryType"
-                />
-                Walk-in (Individual)
-              </label>
-              <label>
-                <input
-                  type="radio"
-                  value="group"
-                  v-model="guestDetails.entryType"
-                />
-                Car (Group)
-              </label>
+
+          <label for="location" class="special-case">Location:</label>
+            <div class="form-group">
+              <input
+              type="text"
+              v-model="guestDetails.location"
+              id="location"
+              placeholder="Enter rental location"
+              required
+            />
+            </div>
+            <div class="form-group">
+              <label>Entry Type:</label>
+              <div class="select-mode">
+                <label>
+                  <input
+                    type="radio"
+                    value="individual"
+                    v-model="guestDetails.entryType"
+                  />
+                  Walk-in (Individual)
+                </label>
+                <label>
+                  <input
+                    type="radio"
+                    value="group"
+                    v-model="guestDetails.entryType"
+                  />
+                  Car (Group)
+                </label>
+              </div>
             </div>
 
             <!-- Individual Entry -->
@@ -59,7 +72,7 @@
                 id="guestName"
                 required
               />
-              <label for="individualImage">Upload Image:</label>
+              <label for="individualImage" class="just-space">Upload Image:</label>
               <input
                 type="file"
                 @change="uploadImage('individual')"
@@ -81,14 +94,14 @@
                 id="guestName"
                 required
               />
-              <label for="names">Names of Passengers (Separate by line):</label>
+              <label for="names" class="just-space">Names of Passengers (Separate by line):</label>
               <textarea
                 v-model="guestDetails.names"
                 id="names"
                 placeholder="Enter one name per line"
                 required
               ></textarea>
-              <label for="driverImage">Upload Driver Image:</label>
+              <label for="driverImage" class="just-space">Upload Driver Image:</label>
               <input
                 type="file"
                 @change="uploadImage('driver')"
@@ -102,7 +115,7 @@
           <!-- Expiration Options -->
           <div class="form-group">
             <label>Set Expiration:</label>
-            <div>
+            <div class="select-mode">
               <label>
                 <input type="radio" value="duration" v-model="expirationType" />
                 Set Validity Duration (in hours)
@@ -201,6 +214,7 @@ export default {
         guestName: "", // Main guest name for both individual and group entries
         names: "", // Passenger names for group entries only
         imageUrl: "", // Image URL for driver or individual
+        location: "",
       },
       validityDuration: 1,
       qrCodeUrl: "",
@@ -276,6 +290,7 @@ export default {
           names,
           category: this.guestDetails.category,
           entryType: this.guestDetails.entryType,
+          location: this.guestDetails.location,
           createdBy: currentUser.email,
           creatorName: this.creatorName,
           imageUrl: this.guestDetails.imageUrl,
@@ -285,7 +300,7 @@ export default {
           createdAt: serverTimestamp(),
         });
 
-        const qrCodeData = `localhost:8080/view-qr/${qrCodeRef.id}`;
+        const qrCodeData = `https://itcapstonerfidandqr.web.app/view-qr/${qrCodeRef.id}`;
         this.qrCodeUrl = await QRCode.toDataURL(qrCodeData, { width: 300 });
 
         await updateDoc(doc(db, "guest_qrcodes", qrCodeRef.id), {
@@ -311,23 +326,7 @@ export default {
 
 /* Style for the container */
 body {
-  font-family: Arial, sans-serif;
-}
-
-/* Sidebar styles */
-.sidebar {
-  position: fixed;
-  top: 0;
-  left: 0;
-  width: 300px; /* Fixed width of the sidebar */
-  height: 100vh; /* Full viewport height */
-  background-color: #2c3e50;
-  color: white;
-  padding: 20px;
-  display: flex;
-  flex-direction: column;
-  justify-content: space-between;
-  z-index: 1000; /* Keeps the sidebar above the main content */
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
 }
 
 /* Main content area */
@@ -339,79 +338,169 @@ body {
   overflow: hidden;
 }
 
+h2 {
+  text-align: center;
+  margin-bottom: 20px;
+  font-size: 2rem;
+  font-weight: bold;
+  text-transform: uppercase;
+  background: linear-gradient(to right, #00bfa5, #007f66);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  text-shadow: 1px 1px 5px rgba(0, 0, 0, 0.2);
+  font-family: 'Poppins', sans-serif;
+  letter-spacing: 1.5px;
+  padding-bottom: 10px;
+  border-bottom: 2px solid #00bfa5;
+  display: inline-block;
+}
+
 .qr-generator {
-  max-width: 500px;
-  height: 85vh;
+  max-width: 600px;
+  height: 95vh;
   margin: auto;
   background-color: #f9f9f9;
-  padding: 20px;
-  border-radius: 8px;
-  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+  padding: 30px;
+  border-radius: 15px;
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
   overflow: hidden;
+  max-height: (100vh - 100px);
 }
 
 .scrollable-container {
+  max-height: 100vh;
   overflow-y: auto;
-  max-height: 100%;
-  padding-right: 10px;
+  padding: 20px;
 }
 
 .form-group {
-  margin-bottom: 15px;
+  margin-bottom: 20px;
+}
+
+.just-space{
+  margin-top: 10px;
 }
 
 .form-group label {
   display: block;
-  margin-bottom: 5px;
+  margin-bottom: 10px;
   font-weight: bold;
+  color: #00bfa5;
+}
+
+.special-case{
+  font-weight: bold;
+  color: #00bfa5;
 }
 
 .form-group input,
 .form-group textarea,
 .form-group select {
   width: 100%;
-  padding: 8px;
-  border: 1px solid #ccc;
-  border-radius: 4px;
+  padding: 12px;
+  border: 2px solid #00bfa5;
+  border-radius: 10px;
+  font-size: 1rem;
+  outline: none;
+  transition: all 0.3s ease;
 }
 
-button {
-  padding: 10px 20px;
-  font-size: 16px;
-  background-color: #3498db;
-  color: white;
-  border: none;
+.form-group textarea:focus,
+.form-group select:focus {
+  border-color: #007f66;
+  box-shadow: 0 0 10px rgba(0, 191, 165, 0.5);
+}
+
+/* Radio Button Group */
+.form-group div {
+  display: flex;
+  gap: 15px;
+  align-items: center;
+}
+
+.form-group label input[type="radio"] {
+  margin-right: 10px;
+}
+
+/* File Input Styles */
+.form-group input[type="file"] {
+  padding: 10px;
+  border: 2px dashed #00bfa5;
+  border-radius: 10px;
+  background-color: #e0f7fa;
   cursor: pointer;
-  border-radius: 5px;
+}
+
+.form-group input[type="file"]:hover {
+  border-color: #007f66;
+}
+
+.select-mode{
+  justify-content: space-evenly;
+}
+
+/* Button Styles */
+button {
+  width: 100%;
+  padding: 15px;
+  font-size: 1rem;
+  font-weight: bold;
+  border: none;
+  border-radius: 10px;
+  background: linear-gradient(to right, #00bfa5, #007f66);
+  color: #fff;
+  cursor: pointer;
+  transition: all 0.3s ease;
 }
 
 button:hover {
-  background-color: #2980b9;
+  background: linear-gradient(to right, #007f66, #00bfa5);
+  box-shadow: 0 4px 10px rgba(0, 191, 165, 0.5);
 }
 
-.manage-button-container {
-  margin-top: 20px;
-}
-
-.manage-button-container button {
+/* Download Button */
+.download-button {
+  display: inline-block;
+  text-align: center;
   padding: 10px 20px;
-  font-size: 16px;
+  font-size: 1rem;
+  margin-top: 20px;
+  border-radius: 10px;
   background-color: #2ecc71;
-  color: white;
-  border: none;
-  border-radius: 5px;
-  cursor: pointer;
+  color: #fff;
+  text-decoration: none;
+  transition: all 0.3s ease;
 }
 
-.manage-button-container button:hover {
+.download-button:hover {
   background-color: #27ae60;
 }
 
+/* QR Code Image */
 .qr-code img {
-  margin-top: 20px;
+  display: block;
+  margin: 20px auto;
   width: 300px;
   height: 300px;
 }
+
+/* Manage Button Container */
+.manage-button-container {
+  margin-top: 30px;
+}
+
+.manage-button-container button {
+  padding: 15px;
+  background-color: #3498db;
+  color: #fff;
+  border-radius: 10px;
+  font-size: 1rem;
+}
+
+.manage-button-container button:hover {
+  background-color: #2980b9;
+}
+
 /* Additional styling for responsiveness */
 @media (max-width: 768px) {
   .sidebar {

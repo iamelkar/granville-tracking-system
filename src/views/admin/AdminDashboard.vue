@@ -129,9 +129,9 @@ export default {
   box-sizing: border-box;
 }
 
-body {
+/* body {
   font-family: Arial, sans-serif;
-}
+} */
 
 /* Sidebar styles */
 .sidebar {
@@ -229,15 +229,15 @@ h2 {
   border: 1px solid #ccc;
 }
 
-.info {
-  font-family: "Georgia", "Times New Roman", serif; /* Classy serif font */
-  font-size: 18px; /* Slightly larger font size */
-  font-weight: 500; /* Medium weight for better readability */
-  color: #333; /* Dark gray color for a soft contrast */
-  line-height: 1.6; /* Better line spacing for readability */
-  margin-bottom: 10px; /* Space between paragraphs */
-  text-transform: capitalize; /* Capitalize first letter of each word */
-}
+/* .info {
+  font-family: "Georgia", "Times New Roman", serif; 
+  font-size: 18px; 
+  font-weight: 500; 
+  color: #333; 
+  line-height: 1.6; 
+  margin-bottom: 10px; 
+  text-transform: capitalize; 
+} */
 
 /* Style the user list */
 .list {

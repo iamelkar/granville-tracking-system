@@ -378,12 +378,15 @@ export default {
   left: 0;
   top: 0;
   z-index: 1000;
+  padding: 20px;
+  border-radius: 0 20px 20px 0;
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
   transition: transform 0.3s ease-in-out;
 }
 
 /* Sidebar Toggle Button */
 .sidebar-toggle {
-  display: none;
+  display: block;
   position: absolute;
   top: 20px;
   left: 20px;
@@ -391,9 +394,10 @@ export default {
   color: rgba(255, 255, 255, 0.7);
   padding: 10px;
   border: none;
-  border-radius: 5px;
+  border-radius: 8px;
   cursor: pointer;
   z-index: 1100;
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
   transition: background-color 0.3s ease, color 0.3s ease;
   opacity: 0.8;
 }
@@ -413,9 +417,14 @@ export default {
 }
 
 .welcome {
-  margin-bottom: 30px;
   text-align: center;
-  font-size: 30px;
+  margin-bottom: 20px;
+  color: #00bfa5;
+}
+
+.welcome h2 {
+  font-size: 1.6rem;
+  font-weight: bold;
 }
 
 .nav {
@@ -439,19 +448,22 @@ export default {
   text-decoration: none;
   font-size: 16px;
   padding: 20px;
+  font-size: 1rem;
+  transition: background-color 0.3s ease, color 0.3s ease;
 }
 
 .nav li a:hover {
-  text-decoration: underline;
+  background-color: #007f66;
+  color: white;
 }
 
 .nav a.router-link-exact-active {
-  background-color: skyblue; /* Active background color */
-  color: white; /* Active text color */
-  width: 100%; /* Ensure the link fills the entire li */
-  display: block; /* Block ensures the link takes full width */
-  padding: 10px; /* Keep padding consistent */
-  box-sizing: border-box; /* Include padding in width calculation */
+  background-color: skyblue;
+  color: white;
+  width: 100%;
+  display: block;
+  padding: 10px;
+  box-sizing: border-box;
   border-radius: 20px;
 }
 
@@ -466,17 +478,22 @@ export default {
 }
 
 .add-resident button {
-  padding: 10px 20px;
-  font-size: 16px;
-  background-color: #e74c3c;
+  width: 100%;
+  padding: 15px;
+  margin-bottom: 15px;
+  font-size: 1rem;
+  font-weight: bold;
+  background: linear-gradient(to right, #00bfa5, #007f66);
   color: white;
   border: none;
+  border-radius: 10px;
   cursor: pointer;
-  border-radius: 5px;
+  transition: all 0.3s ease;
 }
 
 .add-resident button:hover {
-  background-color: #c0392b;
+  background: linear-gradient(to right, #007f66, #00bfa5);
+  box-shadow: 0 4px 10px rgba(0, 191, 165, 0.5);
 }
 
 /* Modal styles */
@@ -507,7 +524,13 @@ export default {
 .modal-content {
   display: flex;
   flex-direction: column;
-  gap: 15px;
+  gap: 20px;
+  padding: 20px;
+  background: linear-gradient(to bottom, #f9f9f9, #e0f7fa);
+  border-radius: 15px;
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+  max-width: 500px;
+  margin: 0 auto;
 }
 
 .form-group {
@@ -516,45 +539,57 @@ export default {
 
 .form-group label {
   display: block;
-  margin-bottom: 5px;
+  margin-bottom: 8px;
+  color: #00bfa5;
   font-weight: bold;
 }
 
 .form-group input,
 .form-group select {
   width: 100%;
-  padding: 8px;
-  border: 1px solid #ccc;
-  border-radius: 4px;
+  padding: 12px;
+  border: 2px solid #00bfa5;
+  border-radius: 10px;
+  font-size: 1rem;
+  outline: none;
+  transition: all 0.3s ease;
 }
 
-.car-plate-input {
-  display: flex;
-  gap: 5px;
+.form-group input:focus,
+.form-group select:focus {
+  border-color: #007f66;
+  box-shadow: 0 0 5px rgba(0, 191, 165, 0.5);
 }
 
+/* Action Buttons in Modal */
 .form-actions {
   display: flex;
   justify-content: space-between;
-  margin-top: 20px;
 }
 
 .form-actions button {
-  padding: 10px 20px;
-  font-size: 16px;
+  flex: 1;
+  padding: 12px;
+  font-size: 1rem;
   border: none;
+  border-radius: 10px;
   cursor: pointer;
-  border-radius: 5px;
+  transition: all 0.3s ease;
 }
 
 .form-actions button:first-of-type {
   background-color: #3498db;
   color: white;
+  margin-right: 10px;
 }
 
 .form-actions button:last-of-type {
   background-color: #e74c3c;
   color: white;
+}
+
+.form-actions button:hover {
+  opacity: 0.9;
 }
 
 /* Responsive Styles for Mobile Screens */

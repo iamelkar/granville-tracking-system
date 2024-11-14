@@ -3,57 +3,60 @@
     <SidebarNav />
 
     <div class="main-content">
-      <div class="controls">
-        <input
-          v-model="searchQuery"
-          type="text"
-          placeholder="Search by guest name..."
-          class="search-input"
-        />
 
-        <input
-          type="date"
-          v-model="selectedDate"
-          class="date-input"
-          placeholder="Select Date"
-        />
+      <div class="content-container">
+        <div class="controls">
+          <input
+            v-model="searchQuery"
+            type="text"
+            placeholder="Search by guest name..."
+            class="search-input"
+          />
 
-        <label>
-          Sort by:
-          <select v-model="sortOption">
-            <option value="latest">Latest</option>
-            <option value="timestamp">Date</option>
-          </select>
-        </label>
-      </div>
+          <input
+            type="date"
+            v-model="selectedDate"
+            class="date-input"
+            placeholder="Select Date"
+          />
 
-      <div class="table-container">
-        <table class="logs-table">
-          <thead>
-            <tr>
-              <th @click="sortLogs('guestName')">Guest Name</th>
-              <th @click="sortLogs('creatorName')">Created By</th>
-              <th @click="sortLogs('timestamp')">Timestamp</th>
-              <th @click="sortLogs('category')">Category</th>
-              <th>Status</th>
-              <th>Details</th>
-            </tr>
-          </thead>
-          <tbody>
-            <tr
-              v-for="log in filteredLogs"
-              :key="log.id"
-              :class="getRowClass(log.status)"
-            >
-              <td>{{ log.guestName || "N/A" }}</td>
-              <td>{{ log.creatorName || "Unknown" }}</td>
-              <td>{{ log.timestamp }}</td>
-              <td class="capitalize">{{ log.category || "QR Code" }}</td>
-              <td>{{ log.message || "N/A" }}</td>
-              <td>{{ log.additionalDetails || "N/A" }}</td>
-            </tr>
-          </tbody>
-        </table>
+          <label class="sort-label">
+            Sort by:
+            <select v-model="sortOption" class="sort-select">
+              <option value="latest">Latest</option>
+              <option value="timestamp">Date</option>
+            </select>
+          </label>
+        </div>
+
+        <div class="table-container">
+          <table class="logs-table">
+            <thead>
+              <tr>
+                <th @click="sortLogs('guestName')">Guest Name</th>
+                <th @click="sortLogs('creatorName')">Created By</th>
+                <th @click="sortLogs('timestamp')">Timestamp</th>
+                <th @click="sortLogs('category')">Category</th>
+                <th>Status</th>
+                <th>Details</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr
+                v-for="log in filteredLogs"
+                :key="log.id"
+                :class="getRowClass(log.status)"
+              >
+                <td>{{ log.guestName || "N/A" }}</td>
+                <td>{{ log.creatorName || "Unknown" }}</td>
+                <td>{{ log.timestamp }}</td>
+                <td class="capitalize">{{ log.category || "QR Code" }}</td>
+                <td>{{ log.message || "N/A" }}</td>
+                <td>{{ log.additionalDetails || "N/A" }}</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
       </div>
     </div>
   </div>
@@ -202,7 +205,17 @@ export default {
   margin-left: 300px;
   padding: 20px;
   background-color: #00bfa5;
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
   height: 100vh;
+}
+
+.content-container{
+  background-color: #fff;
+  padding: 20px;
+  border-radius: 12px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  height: calc(100vh - 50px);
+  overflow: hidden;
 }
 
 .capitalize {
@@ -210,53 +223,75 @@ export default {
 }
 
 .controls {
-  margin-bottom: 15px;
+  margin-bottom: 20px;
   display: flex;
-  gap: 10px;
+  justify-content: space-between;
+  gap: 15px;
   overflow-y: auto;
 }
 
-.date-input {
-  padding: 8px;
-  margin-left: 10px;
+.search-input,
+.date-input,
+.sort-select {
+  padding: 12px;
+  border: 2px solid #00bfa5;
+  border-radius: 10px;
+  width: 250px;
+  outline: none;
+  transition: all 0.3s ease;
 }
 
 .search-input {
-  padding: 8px;
-  width: 200px;
+  width: 300px;
 }
 
+.search-input:focus,
+.date-input:focus,
+.sort-select:focus {
+  border-color: #007f66;
+  box-shadow: 0 0 10px rgba(0, 191, 165, 0.5);
+}
+
+.sort-label {
+  font-weight: bold;
+  color: #fff;
+}
+
+/* Table styling */
 .table-container {
-  max-height: 85vh;
+  max-height: 83vh;
   overflow-y: auto;
   overflow-x: auto;
   border: 1px solid #ddd;
-  background-color: white;
+  border-radius: 10px;
+  background-color: #fff;
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
   height: calc(100vh - 100px);
 }
 
 .logs-table {
   width: 100%;
   border-collapse: collapse;
-  margin-top: 20px;
-  background-color: white;
+  margin-top: 0px;
 }
 
 .logs-table th,
 .logs-table td {
-  padding: 10px;
+  padding: 12px;
   text-align: left;
   border: 1px solid #ddd;
   cursor: pointer;
+  font-size: 1rem;
 }
 
 .logs-table th {
-  background-color: #f4f4f4;
+  background-color: #e0e0e0;
+  color: #00bfa5;
   font-weight: bold;
 }
 
 .logs-table tr:nth-child(even) {
-  background-color: #f9f9f9;
+  background-color: #f1f1f1;
 }
 
 /* Log Entry - Green */
@@ -270,14 +305,12 @@ export default {
 .log-exit {
   background-color: #e3f2fd;
   color: #1e88e5;
-  font-weight: bold;
 }
 
 /* Log Invalid - Red */
 .log-invalid {
   background-color: #ffebee;
   color: #c62828;
-  font-weight: bold;
 }
 
 /* Mobile View Styles */

@@ -3,46 +3,47 @@
     <SidebarNav />
 
     <div class="main-content">
-      <h2>All QR Codes</h2>
+      
+      <div class="content-container">
+        <div class="controls">
+          <input
+            v-model="searchQuery"
+            type="text"
+            placeholder="Search by guest name or creator name..."
+            class="search-input"
+          />
+          <label class="sort-label">
+            Sort by:
+            <select v-model="sortOption" class="sort-select">
+              <option value="latest">Latest</option>
+              <option value="startDate">Start Date</option>
+              <option value="expirationTime">Expiration Time</option>
+            </select>
+          </label>
+        </div>
 
-      <div class="controls">
-        <input
-          v-model="searchQuery"
-          type="text"
-          placeholder="Search by guest name or creator name..."
-          class="search-input"
-        />
-        <label>
-          Sort by:
-          <select v-model="sortOption">
-            <option value="latest">Latest</option>
-            <option value="startDate">Start Date</option>
-            <option value="expirationTime">Expiration Time</option>
-          </select>
-        </label>
-      </div>
-
-      <div class="table-container">
-        <table class="qrcodes-table">
-          <thead>
-            <tr>
-              <th @click="sortQrCodes('guestName')">Guest Name</th>
-              <th @click="sortQrCodes('creatorName')">Creator Name</th>
-              <th @click="sortQrCodes('createdAt')">Created At</th>
-              <th @click="sortQrCodes('startDate')">Start Date</th>
-              <th @click="sortQrCodes('expirationTime')">Expiration Time</th>
-            </tr>
-          </thead>
-          <tbody>
-            <tr v-for="qrCode in filteredQrCodes" :key="qrCode.id">
-              <td>{{ qrCode.guestName || "N/A" }}</td>
-              <td>{{ qrCode.creatorName || "Unknown Creator" }}</td>
-              <td>{{ qrCode.createdAt }}</td>
-              <td>{{ qrCode.startDate }}</td>
-              <td>{{ qrCode.expirationTime }}</td>
-            </tr>
-          </tbody>
-        </table>
+        <div class="table-container">
+          <table class="qrcodes-table">
+            <thead>
+              <tr>
+                <th @click="sortQrCodes('guestName')">Guest Name</th>
+                <th @click="sortQrCodes('creatorName')">Creator Name</th>
+                <th @click="sortQrCodes('createdAt')">Created At</th>
+                <th @click="sortQrCodes('startDate')">Start Date</th>
+                <th @click="sortQrCodes('expirationTime')">Expiration Time</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr v-for="qrCode in filteredQrCodes" :key="qrCode.id">
+                <td>{{ qrCode.guestName || "N/A" }}</td>
+                <td>{{ qrCode.creatorName || "Unknown Creator" }}</td>
+                <td>{{ qrCode.createdAt }}</td>
+                <td>{{ qrCode.startDate }}</td>
+                <td>{{ qrCode.expirationTime }}</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
       </div>
     </div>
   </div>
@@ -135,58 +136,106 @@ export default {
 .main-content {
   margin-left: 300px;
   padding: 20px;
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+}
+
+.content-container{
+  background-color: #fff;
+  padding: 20px;
+  border-radius: 12px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  height: calc(100vh - 50px);
+  overflow: hidden;
 }
 
 .controls {
-  margin-bottom: 15px;
   display: flex;
-  gap: 10px;
+  justify-content: space-between;
+  gap: 15px;
+  align-items: center;
+  margin-bottom: 20px;
 }
 
 .search-input {
-  padding: 8px;
   width: 300px;
+  padding: 10px;
+  border: 2px solid #00bfa5;
+  border-radius: 8px;
+  outline: none;
 }
 
+.search-input:focus {
+  border-color: #007f66;
+  box-shadow: 0 0 5px rgba(0, 191, 165, 0.5);
+}
+
+.sort-label {
+  font-weight: bold;
+  color: #00bfa5;
+}
+
+.sort-select {
+  padding: 10px;
+  border: 2px solid #00bfa5;
+  border-radius: 8px;
+}
+
+/* Table Styling */
 .table-container {
-  max-height: 85vh;
+  max-height: 83vh;
   overflow-y: auto;
   overflow-x: auto;
-  border: 1px solid #ddd;
-  background-color: white;
+  border-radius: 10px;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+  background-color: #f9f9f9;
   height: calc(100vh - 100px);
 }
 
 .qrcodes-table {
   width: 100%;
   border-collapse: collapse;
-}
-
-.qrcodes-table th,
-.qrcodes-table td {
-  padding: 10px;
-  text-align: left;
-  border: 1px solid #ddd;
+  font-size: 1rem;
 }
 
 .qrcodes-table th {
-  background-color: #f0f0f0;
+  background-color: #e0e0e0;
+  color: #00bfa5;
+  padding: 12px;
+  text-align: left;
+  font-weight: bold;
   cursor: pointer;
+  border-bottom: 2px solid #007f66;
+}
+
+.qrcodes-table td {
+  padding: 12px;
+  border-bottom: 1px solid #ddd;
+  text-transform: capitalize;
+  text-align: left;
 }
 
 .qrcodes-table tr:nth-child(even) {
-  background-color: #f9f9f9;
+  background-color: #e8f5e9;
+}
+
+/* Button Styling */
+button {
+  padding: 10px 20px;
+  border: none;
+  border-radius: 8px;
+  background-color: #00bfa5;
+  color: white;
+  font-weight: bold;
+  cursor: pointer;
+  transition: 0.3s;
+}
+
+button:hover {
+  background-color: #007f66;
 }
 
 /* Mobile View Styles */
 @media (max-width: 768px) {
-  .sidebar {
-    transform: translateX(-100%);
-  }
-
-  .sidebar.active {
-    transform: translateX(0);
-  }
 
   .main-content {
     margin-left: 0;
@@ -211,9 +260,6 @@ export default {
 
   h2 {
     font-size: 1.2rem;
-  }
-  .sidebar-toggle {
-    display: block;
   }
 }
 </style>

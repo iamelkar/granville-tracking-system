@@ -9,6 +9,13 @@
 
       <p><strong>Guest Name:</strong> {{ qrCodeDetails.guestName }}</p>
       <p><strong>Category:</strong> {{ qrCodeDetails.category }}</p>
+      <p><strong>Created By:</strong> {{ qrCodeDetails.creatorName }}</p>
+      <p><strong>Location:</strong> {{ qrCodeDetails.location }}</p>
+
+      <div v-if="qrCodeDetails.entryType == 'group'">
+        <p><strong>Names:</strong></p>
+        <p v-for="(name, index) in qrCodeDetails.names" :key="index"> {{ name }}</p>
+      </div>
 
       <p>
         <strong>Starting Date:</strong>

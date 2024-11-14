@@ -311,6 +311,14 @@ export default {
 </script>
 
 <style scoped>
+
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+}
+
 /* Sidebar and main content styles */
 .main-content {
   margin-left: 250px; /* Adjust based on sidebar width */
@@ -323,39 +331,47 @@ export default {
   background-color: white;
   margin-left: 50px;
   padding: 20px;
-  border-radius: 10px;
-  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+  border-radius: 12px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
   height: calc(100vh - 40px);
   overflow: hidden;
 }
 .table-container {
   max-height: 100vh;
-  overflow-y: auto; /* Enable vertical scrolling */
-  overflow-x: auto; /* Enable horizontal scrolling if needed */
-  border: 1px solid #ddd; /* Optional: Add a border around the table container */
+  overflow-y: auto;
+  overflow-x: auto;
+  border-radius: 12px;
+  overflow: hidden;
+  border: 1px solid #e0e0e0;
 }
 .table-container table {
   width: 100%; /* Ensure the table takes the full width of the container */
   border-collapse: collapse;
 }
+
+
 .table-container th,
 .table-container td {
-  padding: 10px;
+  padding: 15px;
   text-align: left;
-  border: 1px solid #ddd;
+  border: 1px solid #e0e0e0;
 }
 
 .table-container th {
-  background-color: #f4f4f4;
-  font-weight: bold;
+  color: #00bfa5;
 }
+
+.table-container td {
+  background-color: #fff;
+}
+
 .modal-overlay {
   position: fixed;
   top: 0;
   left: 0;
   width: 100%;
   height: 100%;
-  background-color: rgba(0, 0, 0, 0.5);
+  background-color: rgba(0, 0, 0, 0.6);
   display: flex;
   justify-content: center;
   align-items: center;
@@ -365,10 +381,10 @@ export default {
 .modal {
   background-color: #fff;
   padding: 20px;
-  border-radius: 8px;
-  width: 400px;
-  max-width: 100%;
-  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+  border-radius: 12px;
+  max-width: 500px;
+  width: 100%;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
 }
 
 .form-group {
@@ -379,14 +395,15 @@ export default {
   display: block;
   margin-bottom: 5px;
   font-weight: bold;
+  color: #00796b;
 }
 
 .form-group input,
 .form-group select {
   width: 100%;
-  padding: 8px;
+  padding: 10px;
   border: 1px solid #ccc;
-  border-radius: 4px;
+  border-radius: 8px;
 }
 
 .form-actions {
@@ -422,9 +439,10 @@ export default {
   color: white;
   padding: 10px;
   border: none;
-  border-radius: 5px;
+  border-radius: 8px;
   cursor: pointer;
   width: 100%;
+  margin-top: 20px;
 }
 
 .reset-btn:hover {
@@ -433,26 +451,30 @@ export default {
 
 /* Role menu styles */
 .role-menu {
+  display: flex;
+  gap: 10px;
   margin-bottom: 20px;
 }
 
 .role-menu button {
-  margin-right: 10px;
+  flex: 1;
   padding: 10px;
+  background-color: #e0f7fa;
+  color: #00796b;
+  border: none;
+  border-radius: 8px;
   cursor: pointer;
-  border: 1px solid #ccc;
-  background-color: #82b476;
-  border-radius: 5px;
+  font-weight: 500;
+  transition: all 0.2s;
 }
 
 .role-menu button.active {
-  background-color: #3498db;
-  color: white;
-  border-color: #3498db;
+  background-color: #00bfa5;
+  color: #fff;
 }
 
 .role-menu button:hover {
-  background-color: #ddd;
+  background-color: #00a18f;
 }
 
 /* Search and filter styles */
@@ -464,12 +486,17 @@ export default {
 }
 
 .search-filter input {
-  padding: 5px;
-  width: 300px;
+  width: 100%;
+  max-width: 400px;
+  padding: 10px;
+  border: 1px solid #ccc;
+  border-radius: 8px;
 }
 
 .search-filter select {
-  padding: 5px;
+  padding: 10px;
+  border-radius: 8px;
+  border: 1px solid #ccc;
 }
 
 /* User list table styles */
@@ -489,15 +516,22 @@ export default {
   background-color: #f0f0f0;
 }
 
+.info{
+  text-transform: capitalize;
+}
+
 .user-list button {
-  padding: 5px 10px;
-  cursor: pointer;
+  padding: 8px 12px;
   margin-right: 5px;
+  border-radius: 8px;
+  border: none;
+  cursor: pointer;
+  transition: all 0.2s;
 }
 
 .user-list button:first-of-type {
-  background-color: #3498db;
-  color: white;
+  background-color: #00bfa5;
+  color: #fff;
   border: none;
 }
 
@@ -508,7 +542,7 @@ export default {
 }
 
 .user-list button:hover {
-  opacity: 0.8;
+  opacity: 0.9;
 }
 
 /* Mobile View Styles */
