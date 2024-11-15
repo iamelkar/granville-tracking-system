@@ -132,53 +132,24 @@ export default {
   box-sizing: border-box;
 }
 
-/* Style for the container */
-body {
-  font-family: Arial, sans-serif;
-}
-
-/* Sidebar styles */
-.sidebar {
-  width: 300px;
-  height: 100vh;
-  background-color: #2c3e50;
-  color: white;
-  position: fixed;
-  left: 0;
-  top: 0;
-  transition: transform 0.3s ease-in-out;
-  z-index: 1000;
-}
-
-.sidebar.active {
-  transform: translateX(0);
-}
-
-.sidebar-toggle {
-  display: none;
-  position: absolute;
-  top: 20px;
-  left: 20px;
-  background-color: #3498db;
-  color: white;
-  padding: 10px;
-  border: none;
-  border-radius: 5px;
-  cursor: pointer;
-}
-
 /* Main content area */
 .main-content {
-  margin-left: 300px; /* Make room for the fixed sidebar */
+  margin-left: 250px; /* Make room for the fixed sidebar */
   padding: 20px;
   background-color: #00bfa5;
   height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: auto;
   transition: margin-left 0.3s ease-in-out;
+  font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
 }
 
 /* Container to wrap both sections */
 .container {
   display: flex;
+  margin-left: 50px;
   justify-content: space-between;
   width: 100%;
   height: 100%; /* Full height for layout purposes */
@@ -197,8 +168,9 @@ body {
 .system-alerts {
   /* margin-bottom: 20px; Add some space between items */
   padding: 20px;
-  background-color: #f0f0f0; /* Light background for clarity */
-  border-radius: 8px;
+  background-color: #ffffff; /* Light background for clarity */
+  border-radius: 12px;
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
   height: 100%;
 }
 
@@ -206,9 +178,17 @@ body {
 .recent-activities {
   width: 70%; /* Right side takes 70% of the width */
   padding: 20px;
-  background-color: #f0f0f0; /* Light background for clarity */
-  border-radius: 8px;
+  background-color: #ffffff; /* Light background for clarity */
+  border-radius: 12px;
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
   margin-left: 20px;
+}
+
+.profile h2,
+.system-alerts-card h2,
+.recent-activities-card h2 {
+  font-size: 1.8rem;
+  margin-bottom: 15px;
 }
 
 .profile-info {
@@ -279,6 +259,20 @@ body {
   align-items: center;
 }
 
+.upload-button {
+  background-color: #3498db;
+  color: white;
+  padding: 10px 20px;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.upload-button:hover {
+  background-color: #2980b9;
+}
+
 h2 {
   display: flex;
   align-items: center; /* Center-align icon and text */
@@ -302,6 +296,10 @@ h1 {
 
   .main-content {
     margin-left: 0;
+  }
+
+  .container {
+    margin-left: 0px;
   }
 
   .sidebar-toggle {

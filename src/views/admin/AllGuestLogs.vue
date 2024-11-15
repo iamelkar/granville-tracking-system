@@ -3,8 +3,8 @@
     <SidebarNav />
 
     <div class="main-content">
-
       <div class="content-container">
+        <h2>Guest Logs</h2>
         <div class="controls">
           <input
             v-model="searchQuery"
@@ -25,6 +25,17 @@
             <select v-model="sortOption" class="sort-select">
               <option value="latest">Latest</option>
               <option value="timestamp">Date</option>
+            </select>
+          </label>
+
+          <label class="sort-label">
+            Filter by Status:
+            <select v-model="selectedStatus" class="status-select">
+              <option value="all">All</option>
+              <option value="entry">Entry</option>
+              <option value="exit">Exit</option>
+              <option value="expired">Expired</option>
+              <option value="not_started">Not Started</option>
             </select>
           </label>
         </div>
@@ -77,6 +88,7 @@ export default {
     const searchQuery = ref("");
     const sortOption = ref("latest");
     const selectedDate = ref("");
+    const selectedStatus = ref("all");
 
     // Function to extract creatorName from 'guest_qrcodes' collection
     const fetchCreatorName = async (documentId) => {
@@ -153,6 +165,7 @@ export default {
       const selectedDateValue = selectedDate.value
         ? new Date(selectedDate.value).toDateString()
         : null;
+      const statusFilter = selectedStatus.value.toLowerCase();
 
       // Filter logs based on search query and selected date
       let result = qrLogs.value.filter((log) => {
@@ -162,8 +175,11 @@ export default {
           ? log.rawTimestamp.toDate().toDateString()
           : null;
         const matchesDate = !selectedDateValue || logDate === selectedDateValue;
+        const matchesStatus =
+          statusFilter === "all" ||
+          log.status.toLowerCase().includes(statusFilter);
 
-        return matchesSearch && matchesDate;
+        return matchesSearch && matchesDate && matchesStatus;
       });
 
       // Sort logs based on selected option
@@ -184,6 +200,8 @@ export default {
       if (status.toLowerCase().includes("entry")) return "log-entry";
       if (status.toLowerCase().includes("exit")) return "log-exit";
       if (status.toLowerCase().includes("expired")) return "log-invalid";
+      if (status.toLowerCase().includes("not_started"))
+        return "log-not-started";
       return "";
     };
 
@@ -193,6 +211,7 @@ export default {
       searchQuery,
       sortOption,
       selectedDate,
+      selectedStatus,
       filteredLogs,
       getRowClass,
     };
@@ -202,20 +221,26 @@ export default {
 
 <style scoped>
 .main-content {
-  margin-left: 300px;
+  margin-left: 250px;
   padding: 20px;
   background-color: #00bfa5;
-  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+  font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
   height: 100vh;
 }
 
-.content-container{
+.content-container {
   background-color: #fff;
   padding: 20px;
+  margin-left: 50px;
   border-radius: 12px;
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
   height: calc(100vh - 50px);
   overflow: hidden;
+}
+
+h2 {
+  text-align: left;
+  color: #067264;
 }
 
 .capitalize {
@@ -232,29 +257,31 @@ export default {
 
 .search-input,
 .date-input,
-.sort-select {
+.sort-select,
+.status-select {
   padding: 12px;
   border: 2px solid #00bfa5;
   border-radius: 10px;
-  width: 250px;
   outline: none;
   transition: all 0.3s ease;
 }
 
 .search-input {
   width: 300px;
+  margin-top: 5px;
 }
 
 .search-input:focus,
 .date-input:focus,
-.sort-select:focus {
+.sort-select:focus,
+.status-select:focus {
   border-color: #007f66;
   box-shadow: 0 0 10px rgba(0, 191, 165, 0.5);
 }
 
 .sort-label {
   font-weight: bold;
-  color: #fff;
+  color: #00bfa5;
 }
 
 /* Table styling */
@@ -313,6 +340,11 @@ export default {
   color: #c62828;
 }
 
+.log-not-started {
+  background-color: #fff3e0;
+  color: #ef6c00;
+}
+
 /* Mobile View Styles */
 @media (max-width: 768px) {
   .sidebar {
@@ -322,7 +354,20 @@ export default {
   .sidebar.active {
     transform: translateX(0);
   }
-
+  .content-container {
+    margin-left: 0px;
+    padding: 5px;
+  }
+  .controls {
+    flex-direction: column;
+    gap: 5px;
+  }
+  .search-input,
+  .date-input,
+  .sort-select,
+  .status-select {
+    width: 100%;
+  }
   .main-content {
     margin-left: 0;
     width: 100%;

@@ -33,7 +33,7 @@
               v-model="message"
               placeholder="Write your concern here..."
               required
-              class="form-control"
+              class="form-control message-box"
             ></textarea>
           </div>
 
@@ -46,6 +46,7 @@
               @change="handleFilesChange"
               multiple
               class="form-control"
+              :class="messageBox"
               accept="image/*"
             />
           </div>
@@ -232,32 +233,30 @@ export default {
   margin: 0;
   padding: 0;
   box-sizing: border-box;
+  font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
 }
 
-/* Style for the container */
-body {
-  font-family: Arial, sans-serif;
-}
-
-/* Main content area */
 .main-content {
-  margin-left: 250px; /* Make room for the fixed sidebar */
+  margin-left: 250px;
   padding: 20px;
   background-color: #00bfa5;
   height: 100vh;
-}
-
-#message {
-  height: 50vh;
 }
 
 .contact-us {
   max-width: 600px;
   margin: 0 auto;
   padding: 20px;
-  background-color: #f9f9f9;
-  border-radius: 8px;
-  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+  background-color: #ffffff;
+  border-radius: 12px;
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+}
+
+h2 {
+  text-align: center;
+  color: #007f66;
+  margin-bottom: 20px;
+  font-weight: 700;
 }
 
 .form-group {
@@ -266,19 +265,35 @@ body {
 
 .form-control {
   width: 100%;
-  padding: 10px;
-  border: 1px solid #ccc;
-  border-radius: 5px;
+  padding: 12px;
+  border: 2px solid #00bfa5;
+  border-radius: 10px;
+  outline: none;
+  transition: all 0.3s ease;
+}
+
+.message-box {
+  height: 40vh; /* Set height to 40% of the viewport */
+  min-height: 200px; /* Minimum height for smaller screens */
+  max-height: 60vh; /* Maximum height to prevent overflow */
+  resize: vertical; /* Allow users to resize the box vertically */
+}
+
+.form-control:focus {
+  border-color: #007f66;
+  box-shadow: 0 0 10px rgba(0, 191, 165, 0.5);
 }
 
 .send-button {
   width: 100%;
-  padding: 10px;
+  padding: 12px;
   background-color: #3498db;
   color: white;
   border: none;
-  border-radius: 5px;
+  border-radius: 10px;
   cursor: pointer;
+  font-weight: 500;
+  transition: all 0.3s ease;
 }
 
 .send-button:hover {
@@ -289,18 +304,18 @@ body {
   margin-top: 15px;
   text-align: center;
   color: #2ecc71;
+  font-weight: 500;
 }
 
-h2 {
-  text-align: center;
-  margin-bottom: 20px;
+.file-list h3 {
+  margin-top: 10px;
+  color: #007f66;
 }
 
-h1 {
-  font-size: 36px;
-  color: #333;
+.file-list ul {
+  padding: 0;
+  list-style: none;
 }
-
 /* Additional styling for responsiveness */
 @media (max-width: 768px) {
   .sidebar {

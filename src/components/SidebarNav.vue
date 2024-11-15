@@ -104,12 +104,7 @@
             </div>
             <div class="form-group">
               <label for="street">Street:</label>
-              <input
-                type="text"
-                v-model="newResident.street"
-                id="street"
-                required
-              />
+              <input type="text" v-model="newResident.street" id="street" />
             </div>
             <div class="form-group">
               <label for="houseLotNumber">House Lot & Block Number:</label>

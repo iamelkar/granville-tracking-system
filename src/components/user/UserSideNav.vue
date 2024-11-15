@@ -130,6 +130,9 @@ export default {
   top: 0;
   left: 0;
   z-index: 1000;
+  padding: 20px;
+  border-radius: 0 20px 20px 0;
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
   transition: transform 0.3s ease-in-out;
 }
 
@@ -138,22 +141,44 @@ export default {
 }
 
 .sidebar-toggle {
-  display: none;
+  display: block;
   position: absolute;
   top: 20px;
   left: 20px;
-  background-color: #3498db;
-  color: white;
+  background-color: rgba(52, 152, 219, 0.4);
+  color: rgba(255, 255, 255, 0.7);
   padding: 10px;
   border: none;
-  border-radius: 5px;
+  border-radius: 8px;
   cursor: pointer;
+  z-index: 1100;
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+  transition: background-color 0.3s ease, color 0.3s ease;
+  opacity: 0.8;
+}
+
+.sidebar-toggle:hover,
+.sidebar-toggle:focus {
+  background-color: rgba(52, 152, 219, 0.8);
+  color: rgba(255, 255, 255, 1);
+  opacity: 1;
+}
+
+/* Optional active state for when the button is clicked */
+.sidebar-toggle:active {
+  background-color: rgba(41, 128, 185, 0.9);
+  color: white;
 }
 
 .welcome {
   margin-bottom: 30px;
   text-align: center;
   font-size: 30px;
+}
+
+.welcome h2 {
+  font-size: 1.6rem;
+  font-weight: bold;
 }
 
 .nav {
@@ -177,10 +202,13 @@ export default {
   text-decoration: none;
   font-size: 16px;
   padding: 20px;
+  font-size: 1rem;
+  transition: background-color 0.3s ease, color 0.3s ease;
 }
 
 .nav li a:hover {
-  text-decoration: underline;
+  background-color: #007f66;
+  color: white;
 }
 
 .nav a.router-link-exact-active {
@@ -193,36 +221,42 @@ export default {
   border-radius: 20px;
 }
 
+/* Log Out Button */
 .log-out {
   margin-top: auto;
   text-align: center;
-  padding: 0;
 }
 
 .log-out button {
-  padding: 10px 20px;
-  font-size: 16px;
-  background-color: #e74c3c;
-  color: white;
+  width: 100%;
+  padding: 12px;
+  font-size: 1rem;
+  font-weight: bold;
+  background: linear-gradient(to right, #e74c3c, #c0392b);
+  color: #fff;
   border: none;
+  border-radius: 10px;
   cursor: pointer;
-  border-radius: 5px;
+  transition: all 0.3s ease;
 }
 
 .log-out button:hover {
-  background-color: #c0392b;
+  background: linear-gradient(to right, #c0392b, #e74c3c);
+  box-shadow: 0 4px 10px rgba(231, 76, 60, 0.5);
 }
 
 @media (max-width: 768px) {
-  .sidebar-toggle {
-    display: block;
-  }
   .sidebar {
     transform: translateX(-100%);
+    width: 250px;
   }
 
   .sidebar.active {
     transform: translateX(0);
+  }
+
+  .sidebar-toggle {
+    display: block;
   }
 }
 </style>

@@ -3,8 +3,8 @@
     <SidebarNav />
 
     <div class="main-content">
-      
       <div class="content-container">
+        <h2>All QR Codes</h2>
         <div class="controls">
           <input
             v-model="searchQuery"
@@ -134,18 +134,24 @@ export default {
 
 <style scoped>
 .main-content {
-  margin-left: 300px;
+  margin-left: 250px;
   padding: 20px;
-  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+  font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
 }
 
-.content-container{
+.content-container {
   background-color: #fff;
+  margin-left: 50px;
   padding: 20px;
   border-radius: 12px;
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
   height: calc(100vh - 50px);
   overflow: hidden;
+}
+
+h2 {
+  text-align: left;
+  color: #067264;
 }
 
 .controls {
@@ -236,7 +242,6 @@ button:hover {
 
 /* Mobile View Styles */
 @media (max-width: 768px) {
-
   .main-content {
     margin-left: 0;
     width: 100%;
@@ -246,10 +251,15 @@ button:hover {
     margin-left: 0;
     width: 100%;
   }
-  .user-management-content {
-    /* width: 100%; */
+
+  .content-container {
     margin-left: 0px;
-    height: auto;
+  }
+  .search-input {
+    max-width: 20vh;
+  }
+  .sort-select {
+    max-width: 12vh;
   }
 
   .table-container {

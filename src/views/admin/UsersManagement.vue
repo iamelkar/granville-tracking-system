@@ -311,12 +311,11 @@ export default {
 </script>
 
 <style scoped>
-
 * {
   margin: 0;
   padding: 0;
   box-sizing: border-box;
-  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+  font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
 }
 
 /* Sidebar and main content styles */
@@ -337,18 +336,16 @@ export default {
   overflow: hidden;
 }
 .table-container {
-  max-height: 100vh;
+  max-height: 78.5vh;
   overflow-y: auto;
   overflow-x: auto;
   border-radius: 12px;
-  overflow: hidden;
   border: 1px solid #e0e0e0;
 }
 .table-container table {
   width: 100%; /* Ensure the table takes the full width of the container */
   border-collapse: collapse;
 }
-
 
 .table-container th,
 .table-container td {
@@ -516,7 +513,7 @@ export default {
   background-color: #f0f0f0;
 }
 
-.info{
+.info {
   text-transform: capitalize;
 }
 

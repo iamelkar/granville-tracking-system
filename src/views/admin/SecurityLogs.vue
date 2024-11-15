@@ -3,8 +3,8 @@
     <SidebarNav />
 
     <div class="main-content">
-
       <div class="content-container">
+        <h2>Resident Logs</h2>
         <div class="controls">
           <input
             v-model="searchQuery"
@@ -20,11 +20,20 @@
             placeholder="Select Date"
           />
 
-          <label>
+          <label class="sort-label">
             Sort by:
             <select v-model="sortOption" class="sort-select">
               <option value="latest">Latest</option>
               <option value="timestamp">Date</option>
+            </select>
+          </label>
+
+          <label class="sort-label">
+            Filter by Mode:
+            <select v-model="selectedMode" class="mode-select">
+              <option value="all">All</option>
+              <option value="entry">Entry</option>
+              <option value="exit">Exit</option>
             </select>
           </label>
         </div>
@@ -75,6 +84,7 @@ export default {
     const searchQuery = ref("");
     const sortOption = ref("latest");
     const selectedDate = ref("");
+    const selectedMode = ref("all");
 
     const fetchRfidLogs = async () => {
       const logs = [];
@@ -119,6 +129,7 @@ export default {
       const selectedDateValue = selectedDate.value
         ? new Date(selectedDate.value).toDateString()
         : null;
+      const modeFilter = selectedMode.value.toLocaleLowerCase();
 
       // Filter logs based on search query and selected date
       let result = rfidLogs.value.filter((log) => {
@@ -128,8 +139,10 @@ export default {
           ? log.rawTimestamp.toDate().toDateString()
           : null;
         const matchesDate = !selectedDateValue || logDate === selectedDateValue;
+        const matchesMode =
+          modeFilter === "all" || log.mode.toLowerCase().includes(modeFilter);
 
-        return matchesSearch && matchesDate;
+        return matchesSearch && matchesDate && matchesMode;
       });
 
       // Sort logs based on selected option
@@ -161,6 +174,7 @@ export default {
       searchQuery,
       sortOption,
       selectedDate,
+      selectedMode,
       filteredLogs,
       getRowClass,
     };
@@ -170,18 +184,24 @@ export default {
 
 <style scoped>
 .main-content {
-  margin-left: 300px;
+  margin-left: 250px;
   padding: 20px;
-  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+  font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
 }
 
-.content-container{
+.content-container {
   background-color: #fff;
   padding: 20px;
+  margin-left: 50px;
   border-radius: 12px;
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
   height: calc(100vh - 50px);
   overflow: hidden;
+}
+
+h2 {
+  text-align: left;
+  color: #067264;
 }
 
 .controls {
@@ -192,12 +212,15 @@ export default {
   overflow-y: auto;
 }
 
-.search-input{
+.search-input {
   width: 300px;
+  margin-top: 5px;
 }
 
 .search-input,
-.date-input {
+.date-input,
+.sort-select,
+.mode-select {
   padding: 10px;
   border: 2px solid #00bfa5;
   border-radius: 8px;
@@ -205,20 +228,15 @@ export default {
 }
 
 .search-input:focus,
-.date-input:focus {
+.date-input:focus,
+.sort-select:focus,
+.mode-select:focus {
   border-color: #007f66;
   box-shadow: 0 0 5px rgba(0, 191, 165, 0.5);
 }
 
 .sort-label {
-  font-weight: bold;
   color: #00bfa5;
-}
-
-.sort-select {
-  padding: 10px;
-  border: 2px solid #00bfa5;
-  border-radius: 8px;
 }
 
 /* Table Styling */
@@ -290,13 +308,23 @@ export default {
 
   .search-input,
   .date-input,
-  .sort-select {
+  .sort-select,
+  .mode-select {
     width: 100%;
+  }
+
+  .sort-label {
+    font-size: 1rem;
   }
 
   .controls {
     flex-direction: column;
     gap: 10px;
+  }
+
+  .content-container {
+    margin-left: 0px;
+    padding: 5px;
   }
 
   h2 {

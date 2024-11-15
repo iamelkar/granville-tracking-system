@@ -4,7 +4,6 @@
 
     <div class="main-content">
       <h2 class="page-title">QR Code Scanner</h2>
-
       <div id="qr-reader" class="qr-reader"></div>
 
       <div v-if="scannedData" class="scanned-result">
@@ -16,7 +15,7 @@
 
       <div v-if="showModal" class="modal">
         <p>{{ modalMessage }}</p>
-        <button @click="closeModal">Close</button>
+        <button class="modal-close-btn" @click="closeModal">Close</button>
       </div>
     </div>
   </div>
@@ -274,24 +273,47 @@ export default {
 };
 </script>
 
-<style>
+<style scoped>
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+  font-family: "Segoe UI", sans-serif;
+}
+
+.main-content {
+  margin-left: 250px;
+  padding: 20px;
+  min-height: 100vh;
+}
+
+h2 {
+  text-align: center;
+  font-size: 28px;
+  color: #007f66;
+  margin-bottom: 20px;
+}
+
 .qr-reader {
   width: 100%;
   max-width: 500px;
   margin: 0 auto;
   padding: 20px;
-  border: 2px solid #ccc;
-  border-radius: 10px;
-  background-color: #f8f8f8;
+  border: 2px solid #007f66;
+  border-radius: 12px;
+  background-color: #ffffff;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
 }
 
 .scanned-result {
   margin-top: 20px;
-  padding: 10px;
+  margin-left: 50px;
+  padding: 15px;
   background-color: #dff0d8;
   border: 1px solid #3c763d;
   color: #3c763d;
-  border-radius: 5px;
+  border-radius: 10px;
+  text-align: center;
 }
 
 .modal {
@@ -299,10 +321,36 @@ export default {
   top: 50%;
   left: 50%;
   transform: translate(-50%, -50%);
-  background: white;
+  background: #ffffff;
   padding: 20px;
+  border-radius: 12px;
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+  width: 90%;
+  max-width: 500px;
+  text-align: center;
+  z-index: 1000;
+}
+
+.modal p {
+  font-size: 1.1rem;
+  color: #333;
+  margin-bottom: 20px;
+}
+
+.modal-close-btn {
+  width: 100%;
+  padding: 10px;
+  background-color: #022b22;
+  color: white;
+  border: none;
   border-radius: 8px;
-  box-shadow: 0px 4px 12px rgba(0, 0, 0, 0.1);
+  cursor: pointer;
+  font-weight: 600;
+  margin-top: 10px;
+}
+
+.modal-close-btn:hover {
+  background-color: #005f4a;
 }
 
 /* Additional styling for responsiveness */
@@ -315,8 +363,27 @@ export default {
   }
 
   .page-title {
-    margin-top: 30px;
-    margin-left: 100px;
+    text-align: center;
+  }
+
+  .scanned-result {
+    margin-top: 20px;
+    margin-left: 10px;
+  }
+
+  .modal {
+    width: 95%;
+    max-width: 350px;
+    padding: 15px;
+  }
+
+  .modal p {
+    font-size: 1rem;
+  }
+
+  .modal-close-btn {
+    padding: 10px;
+    font-size: 0.9rem;
   }
 }
 </style>

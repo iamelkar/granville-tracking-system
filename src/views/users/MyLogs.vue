@@ -3,54 +3,56 @@
     <UserSideNav />
     <!-- Main content area -->
     <div class="main-content">
-      <h2>My RFID Logs</h2>
+      <div class="content-container">
+        <h2>My RFID Logs</h2>
 
-      <!-- Controls for search, date filter, and sorting -->
-      <div class="controls">
-        <input
-          v-model="searchQuery"
-          type="text"
-          placeholder="Search by mode (entry/exit)..."
-          class="search-input"
-        />
+        <!-- Controls for search, date filter, and sorting -->
+        <div class="controls">
+          <input
+            v-model="searchQuery"
+            type="text"
+            placeholder="Search by mode (entry/exit)..."
+            class="search-input"
+          />
 
-        <input
-          type="date"
-          v-model="selectedDate"
-          class="date-input"
-          placeholder="Select Date"
-        />
+          <input
+            type="date"
+            v-model="selectedDate"
+            class="date-input"
+            placeholder="Select Date"
+          />
 
-        <label>
-          Sort by:
-          <select v-model="sortOption">
-            <option value="latest">Latest</option>
-            <option value="timestamp">Date</option>
-            <option value="mode">Mode</option>
-          </select>
-        </label>
-      </div>
+          <label class="sort-label">
+            Sort by:
+            <select v-model="sortOption" class="sort-select">
+              <option value="latest">Latest</option>
+              <option value="timestamp">Date</option>
+              <option value="mode">Mode</option>
+            </select>
+          </label>
+        </div>
 
-      <!-- Logs table -->
-      <div class="table-container">
-        <table class="logs-table">
-          <thead>
-            <tr>
-              <th>Mode</th>
-              <th @click="sortLogs('timestamp')">Timestamp</th>
-            </tr>
-          </thead>
-          <tbody>
-            <tr
-              v-for="log in filteredLogs"
-              :key="log.id"
-              :class="getRowClass(log.mode)"
-            >
-              <td>{{ log.mode }}</td>
-              <td>{{ log.timestamp }}</td>
-            </tr>
-          </tbody>
-        </table>
+        <!-- Logs table -->
+        <div class="table-container">
+          <table class="logs-table">
+            <thead>
+              <tr>
+                <th>Mode</th>
+                <th @click="sortLogs('timestamp')">Timestamp</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr
+                v-for="log in filteredLogs"
+                :key="log.id"
+                :class="getRowClass(log.mode)"
+              >
+                <td>{{ log.mode }}</td>
+                <td>{{ log.timestamp }}</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
       </div>
     </div>
   </div>
@@ -214,45 +216,104 @@ export default {
 
 <style scoped>
 .main-content {
+  margin-left: 250px; /* Make room for the fixed sidebar */
   padding: 20px;
+  background-color: #00bfa5;
+  height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: auto;
+  transition: margin-left 0.3s ease-in-out;
+  font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+}
+
+.content-container {
+  background-color: #fff;
+  width: -webkit-fill-available;
+  padding: 20px;
+  margin-left: 50px;
+  border-radius: 12px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  height: calc(100vh - 50px);
+  overflow: hidden;
 }
 
 .controls {
-  margin-bottom: 15px;
+  justify-content: space-between;
+  margin-top: 10px;
+  margin-bottom: 20px;
   display: flex;
-  gap: 10px;
-  flex-wrap: wrap;
+  gap: 15px;
+  overflow-y: auto;
+}
+
+h2 {
+  text-align: left;
 }
 
 .search-input,
-.date-input {
-  padding: 8px;
-  border: 1px solid #ccc;
-  border-radius: 5px;
+.date-input,
+.sort-select,
+.status-select {
+  padding: 12px;
+  border: 2px solid #00bfa5;
+  border-radius: 10px;
+  outline: none;
+  transition: all 0.3s ease;
+}
+
+.search-input {
+  width: 300px;
+}
+
+.search-input:focus,
+.date-input:focus,
+.sort-select:focus,
+.status-select:focus {
+  border-color: #007f66;
+  box-shadow: 0 0 10px rgba(0, 191, 165, 0.5);
+}
+
+.sort-label {
+  font-weight: bold;
+  color: #00bfa5;
 }
 
 .table-container {
-  max-height: 70vh;
+  max-height: 80vh;
+  border-radius: 10px;
   overflow-y: auto;
+  overflow-x: auto;
   border: 1px solid #ddd;
   background-color: white;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+  height: calc(100vh - 100px);
 }
 
 .logs-table {
   width: 100%;
   border-collapse: collapse;
-  margin-top: 20px;
+  margin-top: 0px;
 }
 
 .logs-table th,
 .logs-table td {
-  padding: 10px;
+  padding: 12px;
   text-align: left;
   border: 1px solid #ddd;
+  cursor: pointer;
+  font-size: 1rem;
 }
 
 .logs-table th {
-  background-color: #f4f4f4;
+  background-color: #e0e0e0;
+  color: #00bfa5;
+  font-weight: bold;
+}
+
+.logs-table tr:nth-child(even) {
+  background-color: #f1f1f1;
 }
 
 .log-entry {
@@ -279,6 +340,15 @@ export default {
 @media (max-width: 768px) {
   .main-content {
     padding: 10px;
+    margin-left: 0px;
+  }
+
+  .content-container {
+    margin-left: 0px;
+  }
+
+  .table-container {
+    max-height: 61vh;
   }
 
   .controls {
