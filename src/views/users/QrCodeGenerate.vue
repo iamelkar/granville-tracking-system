@@ -47,7 +47,7 @@
                     value="individual"
                     v-model="guestDetails.entryType"
                   />
-                  Walk-in (Individual)
+                  Individual
                 </label>
                 <label>
                   <input
@@ -55,7 +55,7 @@
                     value="group"
                     v-model="guestDetails.entryType"
                   />
-                  Car (Group)
+                  Group
                 </label>
               </div>
             </div>
@@ -154,7 +154,7 @@
             />
           </div>
 
-          <button type="submit">Generate QR Code</button>
+          <button type="submit" class="generate-qr-button">Generate QR Code</button>
         </form>
 
         <div v-if="qrCodeUrl" class="qr-code">
@@ -171,6 +171,10 @@
           >
             Download QR Code
           </a>
+
+          <button @click="refreshPage" class="generate-another-button">
+            Generate Another QR
+          </button>
         </div>
 
         <div class="manage-button-container">
@@ -225,12 +229,20 @@ export default {
       endDate: "",
     };
   },
+  watch:{
+    'guestDetails.category'(){
+      this.resetForm()
+    }
+  },
   async created() {
     await this.getUserRole();
   },
   methods: {
     navigateToQRCodeManagement() {
       this.$router.push({ name: "manage-qr" });
+    },
+    refreshPage(){
+      window.location.reload()
     },
     async getUserRole() {
       const auth = getAuth();
@@ -250,6 +262,18 @@ export default {
       } catch (error) {
         console.error("Error fetching user role:", error);
       }
+    },
+    resetForm(){
+      this.guestDetails.entryType = "";
+      this.guestDetails.guestName = "";
+      this.guestDetails.names = "";
+      this.guestDetails.imageUrl = "";
+      this.guestDetails.location = "";
+      this.validityDuration = 1;
+      this.startDate = "";
+      this.endDate = "";
+      this.expirationType = "duration";
+      this.qrCodeUrl = "";
     },
     async uploadImage(type) {
       const file = event.target.files[0];
@@ -447,15 +471,20 @@ button {
   font-weight: bold;
   border: none;
   border-radius: 10px;
-  background: linear-gradient(to right, #00bfa5, #007f66);
   color: #fff;
   cursor: pointer;
-  transition: all 0.3s ease;
+  transition: background-color 0.3s ease, box-shadow 0.3s ease, transform 0.3s ease;
+  margin-top: 20px;
 }
 
-button:hover {
+.generate-qr-button{
+  background: linear-gradient(to right, #00bfa5, #007f66);
+}
+
+.generate-qr-button:hover {
   background: linear-gradient(to right, #007f66, #00bfa5);
   box-shadow: 0 4px 10px rgba(0, 191, 165, 0.5);
+  transform: translateY(-3px);
 }
 
 /* Download Button */
@@ -466,14 +495,17 @@ button:hover {
   font-size: 1rem;
   margin-top: 20px;
   border-radius: 10px;
-  background-color: #2ecc71;
+  background: linear-gradient(to right, #27ae60, #2ecc71);
+  box-shadow: 0 4px 10px rgba(0, 191, 165, 0.2);
   color: #fff;
   text-decoration: none;
   transition: all 0.3s ease;
 }
 
 .download-button:hover {
-  background-color: #27ae60;
+  background: linear-gradient(to right, #1e8449, #27ae60);
+  box-shadow: 0 8px 20px rgba(0, 191, 165, 0.4);
+  transform: translateY(-3px);
 }
 
 /* QR Code Image */
@@ -484,6 +516,27 @@ button:hover {
   height: 300px;
 }
 
+.generate-another-button {
+  width: 100%;
+  padding: 15px;
+  font-size: 1rem;
+  font-weight: bold;
+  border: none;
+  border-radius: 10px;
+  background: linear-gradient(to right, #16a085, #1abc9c);
+  box-shadow: 0 4px 10px rgba(0, 191, 165, 0.2);
+  color: #fff;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  margin-top: 20px;
+}
+
+.generate-another-button:hover {
+  background: linear-gradient(to right, #0e6655, #16a085);
+  box-shadow: 0 8px 20px rgba(0, 191, 165, 0.4);
+  transform: translateY(-3px);
+}
+
 /* Manage Button Container */
 .manage-button-container {
   margin-top: 30px;
@@ -491,14 +544,17 @@ button:hover {
 
 .manage-button-container button {
   padding: 15px;
-  background-color: #3498db;
+  background: linear-gradient(to right, #3498db, #2980b9);
   color: #fff;
   border-radius: 10px;
   font-size: 1rem;
+  box-shadow: 0 4px 10px rgba(52, 152, 219, 0.2);
 }
 
 .manage-button-container button:hover {
   background-color: #2980b9;
+  box-shadow: 0 8px 20px rgba(52, 152, 219, 0.4);
+  transform: translateY(-3px);
 }
 
 /* Additional styling for responsiveness */

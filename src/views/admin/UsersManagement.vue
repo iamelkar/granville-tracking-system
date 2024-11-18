@@ -105,13 +105,16 @@
                 </select>
               </div>
               <div class="form-group">
-                <label for="address">Address:</label>
-                <input
-                  type="text"
-                  v-model="selectedUser.address"
-                  id="address"
-                  required
-                />
+                <label for="phase">Phase:</label>
+                <input type="text" v-model="selectedUser.phase" id="phase" required />
+              </div>
+              <div class="form-group">
+                <label for="houseBlockAndLot">House Block & Lot Number:</label>
+                <input type="text" v-model="selectedUser.houseLotNumber" id="houseLotNumber" required />
+              </div>
+              <div class="form-group">
+                <label for="street">Street Name:</label>
+                <input type="text" v-model="selectedUser.street" id="street" required />
               </div>
               <div class="form-group">
                 <label for="activeStatus">Active Status:</label>
@@ -161,7 +164,9 @@ import {
   doc,
   updateDoc,
   deleteDoc,
+  getDoc
 } from "firebase/firestore";
+import { connectStorageEmulator } from "firebase/storage";
 import { ref, computed } from "vue";
 
 export default {
@@ -252,9 +257,39 @@ export default {
           firstName: selectedUser.value.firstName,
           lastName: selectedUser.value.lastName,
           role: selectedUser.value.role,
-          address: selectedUser.value.address,
+          phase: selectedUser.value.phase,
+          houseLotNumber: selectedUser.value.houseLotNumber,
+          street: selectedUser.value.street,
           activeStatus: selectedUser.value.activeStatus === "true",
         });
+
+        const rfidTag = selectedUser.value.rfidTag
+
+        if(rfidTag){
+          const rfidRef = doc(db, "residents", rfidTag)
+          const rfidDoc = await getDoc(rfidRef)
+
+          if(rfidDoc.exists()){
+            if(selectedUser.value.activeStatus === "false"){
+              await updateDoc(rfidRef, {
+                assigned: false,
+                inactiveUser: true,
+              })
+              console.log("RFID document updated to inactive successfully")
+            }
+
+            if(selectedUser.value.activeStatus === "true"){
+              await updateDoc(rfidRef, {
+                assigned: true,
+                inactiveUser: false
+              })
+              console.log("RFID document updated to active successfully")
+            }
+          } else {
+            console.error("RFID Document not found.")
+            alert("RFID document not found. Please check the RFID tag.")
+          }
+        }
         alert("User updated successfully!");
         closeEditModal();
         fetchUsers();
@@ -282,11 +317,41 @@ export default {
     // Delete user action
     const deleteUser = async (userId) => {
       try {
-        await deleteDoc(doc(db, "users", userId));
-        fetchUsers(); // Refresh user list after deletion
-        alert("User deleted successfully");
+        const userRef = doc(db, "users", userId);
+        const userDoc = await getDoc(userRef);
+
+        if (userDoc.exists()) {
+          const userData = userDoc.data();
+          const rfidTag = userData.rfidTag;
+
+          // Delete the user document from 'users' collection
+          await deleteDoc(userRef);
+          console.log("User document deleted successfully.");
+
+          // Check if the RFID tag is provided
+          if (rfidTag) {
+            const rfidRef = doc(db, "residents", rfidTag);
+
+            // Delete the corresponding document in the 'residents' collection
+            const rfidDoc = await getDoc(rfidRef);
+            if (rfidDoc.exists()) {
+              await deleteDoc(rfidRef);
+              console.log("RFID document deleted successfully from the 'residents' collection.");
+            } else {
+              console.error("RFID document not found in the 'residents' collection.");
+              alert("RFID document not found. Please check the RFID tag.");
+            }
+          }
+        } else {
+          console.error("User document not found in the 'users' collection.");
+          alert("User document not found. Please check the user ID.");
+        }
+
+        alert("User and corresponding RFID document deleted successfully.");
+        fetchUsers();
       } catch (error) {
-        console.error("Error deleting user:", error);
+        console.error("Error deleting user or RFID document:", error);
+        alert(`Error deleting user or RFID document: ${error.message}`);
       }
     };
 

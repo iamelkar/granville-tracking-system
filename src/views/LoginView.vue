@@ -4,7 +4,17 @@
       <form @submit.prevent="handleLogin">
         <input v-model="email" type="email" placeholder="EMAIL" />
         <br />
-        <input v-model="password" type="password" placeholder="PASSWORD" />
+        <div class="password-input-container">
+          <input v-model="password" 
+          :type="showPassword ? 'text' : 'password'" 
+          placeholder="PASSWORD" />
+          <span
+            class="toggle-password"
+            @click="togglePasswordVisibility"
+          >
+            <i :class="showPassword ? 'fa-solid fa-eye-slash' : 'fa-solid fa-eye'"></i>
+          </span>
+        </div>
         <br />
 
         <label for="role">Role:</label>
@@ -15,7 +25,7 @@
         </select>
         <br /><br />
 
-        <a href="#">Forgot password?</a>
+        <a href="#" @click.prevent="handleForgotPassword">Forgot password?</a>
         <br /><br />
 
         <button type="submit">LOGIN</button>
@@ -34,7 +44,7 @@
 <script>
 import { ref } from "vue";
 import { auth, db } from "@/firebase";
-import { signInWithEmailAndPassword, signOut } from "firebase/auth";
+import { signInWithEmailAndPassword, signOut, sendPasswordResetEmail } from "firebase/auth";
 import { doc, getDoc } from "firebase/firestore";
 import { useRouter } from "vue-router";
 
@@ -46,8 +56,14 @@ export default {
     const error = ref(null);
     const showModal = ref(false); // Controls modal visibility
     const modalMessage = ref(""); // Modal message
+    const showPassword = ref(false)
 
     const router = useRouter();
+
+    // Toggle password visibility
+    const togglePasswordVisibility = () => {
+      showPassword.value = !showPassword.value
+    }
 
     // Close modal function
     const closeModal = () => {
@@ -115,6 +131,28 @@ export default {
       }
     };
 
+    const handleForgotPassword = async () => {
+      if(!email.value){
+        modalMessage.value = "Please enter your email address first.";
+        showModal.value = true;
+        return;
+      }
+
+      try {
+        await sendPasswordResetEmail(auth, email.value);
+        modalMessage.value = "Password reset email sent successfully. Please check your inbox.";
+        showModal.value = true;
+      } catch (err) {
+        console.error("Error sending password reset email:", err);
+        if (err.code === "auth/user-not-found") {
+          modalMessage.value = "No account found with this email.";
+        } else {
+          modalMessage.value = `Error: ${err.message}`;
+        }
+        showModal.value = true;
+      }
+    }
+
     return {
       email,
       password,
@@ -124,6 +162,9 @@ export default {
       showModal,
       modalMessage,
       closeModal,
+      showPassword,
+      togglePasswordVisibility,
+      handleForgotPassword
     };
   },
 };
@@ -149,6 +190,20 @@ input {
   border: 1px solid white;
   padding: 10px;
   width: 100%;
+}
+
+.password-input-container {
+  position: relative;
+  width: 100%;
+}
+
+.toggle-password {
+  position: absolute;
+  top: 50%;
+  right: 15px;
+  transform: translateY(-50%);
+  cursor: pointer;
+  color: white;
 }
 
 a {

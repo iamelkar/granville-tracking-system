@@ -1,19 +1,41 @@
 <template>
   <div>
     <!-- Sidebar based on user role -->
-    <SidebarNav v-if="userRole === 'admin'" />
-    <UserSideNav v-else-if="userRole === 'resident'" />
-    <SecuritySidebar v-else-if="userRole === 'security'" />
+    <SidebarNav v-if="userRole && userRole === 'admin'" />
+    <UserSideNav v-else-if="userRole && userRole === 'resident'" />
+    <SecuritySidebar v-else-if="userRole && userRole === 'security'" />
 
     <div class="main-content">
+      <div class="content-container">
       <h2>Your Generated QR Codes</h2>
 
-      <div v-if="qrCodes.length === 0">
+      <div class="controls">
+        <input
+            v-model="searchQuery"
+            type="text"
+            placeholder="Search by guest name..."
+            class="search-input"
+          />
+
+          <select v-model="selectedCategory" class="sort-select">
+            <option value="">All Categories</option>
+            <option value="guest">Guest</option>
+            <option value="renter">Renter</option>
+            <option value="worker">Worker</option>
+          </select>
+
+          <select v-model="sortOption" class="sort-select">
+            <option value="latest">Sort by Latest</option>
+            <option value="oldest">Sort by Oldest</option>
+          </select>
+      </div>
+
+      <div v-if="filteredQRCodes.length === 0">
         <p>You have not generated any QR codes yet.</p>
       </div>
 
-      <div v-else>
-        <table class="qr-codes-table">
+      <div v-else class="table-container">
+        <table>
           <thead>
             <tr>
               <th>Guest Name</th>
@@ -24,9 +46,9 @@
             </tr>
           </thead>
           <tbody>
-            <tr v-for="(qrCode, index) in qrCodes" :key="index">
+            <tr v-for="(qrCode, index) in filteredQRCodes" :key="index">
               <td>
-                <a href="#" @click.prevent="viewQRCode(qrCode)">
+                <a href="#" @click.prevent="viewQRCode(qrCode)" class="guest-link">
                   {{ qrCode.guestName }}
                 </a>
               </td>
@@ -60,7 +82,7 @@
             </div>
 
             <div v-if="selectedQRCode.entryType === 'group'" class="form-group">
-              <label for="guestList">List of Names (Separate by line):</label>
+              <label for="guestList">List of Names (Separate names by pressing enter):</label>
               <textarea
                 v-model="selectedQRCode.names"
                 id="guestList"
@@ -107,8 +129,8 @@
             </div>
 
             <div class="form-actions">
-              <button type="submit">Save</button>
-              <button type="button" @click="closeEditModal">Cancel</button>
+              <button type="submit" class="save-button">Save</button>
+              <button type="button" @click="closeEditModal" class="cancel-button">Cancel</button>
               <button
                 type="button"
                 @click="expireQRCodeNow"
@@ -141,6 +163,7 @@
           </div>
         </div>
       </div>
+    </div>
     </div>
   </div>
 </template>
@@ -178,14 +201,53 @@ export default {
       newImageUrl: null,
       newStartDate: null,
       newExpirationTime: null,
-      userRole: "",
+      userRole: null,
+      searchQuery: "",
+      selectedCategory: "",
+      sortOption: "latest"
     };
   },
   async created() {
     await this.fetchUserQRCodes();
     await this.getUserRole()
   },
-  
+  computed:{
+    filteredQRCodes(){
+      let filtered = this.qrCodes;
+
+      // Filter by search query
+      if (this.searchQuery) {
+        filtered = filtered.filter((qrCode) =>
+          qrCode.guestName
+            .toLowerCase()
+            .includes(this.searchQuery.toLowerCase())
+        );
+      }
+
+      // Filter by category
+      if(this.selectedCategory){
+        filtered  = filtered.filter(
+          (qrCode) =>
+            qrCode.category.toLowerCase() === this.selectedCategory.toLowerCase()
+        )
+      }
+
+      // Sort by date (latest or oldest)
+    if (this.sortOption === "latest") {
+      filtered.sort((a, b) => {
+        if (!a.createdAt || !b.createdAt) return 0; // Skip if createdAt is missing
+        return b.createdAt.seconds - a.createdAt.seconds;
+      });
+    } else if (this.sortOption === "oldest") {
+      filtered.sort((a, b) => {
+        if (!a.createdAt || !b.createdAt) return 0; // Skip if createdAt is missing
+        return a.createdAt.seconds - b.createdAt.seconds;
+      });
+    }
+
+      return filtered
+    }
+  },  
   methods: {
     async getUserRole() {
       const auth = getAuth();
@@ -351,55 +413,118 @@ export default {
 };
 </script>
 
-<style>
-/* Sidebar styles */
-.sidebar {
-  position: fixed;
-  top: 0;
-  left: 0;
-  width: 300px; /* Fixed width of the sidebar */
-  height: 100vh; /* Full viewport height */
-  background-color: #2c3e50;
-  color: white;
-  padding: 20px;
-  display: flex;
-  flex-direction: column;
-  justify-content: space-between;
-  z-index: 1000; /* Keeps the sidebar above the main content */
-}
+<style scoped>
 /* Styling for the table, modal, and other elements */
 .main-content {
-  margin-left: 300px;
+  margin-left: 250px;
   padding: 20px;
+  background: linear-gradient(to bottom right, #00bfa5, #007f66);
   min-height: 100vh;
   box-sizing: border-box;
+  font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
 }
 
-.qr-codes-table {
+.content-container{
+  max-width: 900px;
+  margin-left: 50px;
+  background-color: #ffffff;
+  padding: 20px;
+  border-radius: 15px;
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+  height: calc(100vh - 30px);
+  overflow: hidden;
+}
+
+.controls {
+  display: flex;
+  gap: 15px;
+  margin-bottom: 20px;
+  justify-content: space-between;
+  margin-top: 10px;
+  gap: 15px;
+  overflow-y: auto;
+}
+
+.search-input{
+  width: 300px;
+}
+
+.search-input,
+.sort-select {
+  padding: 12px;
+  border: 2px solid #00bfa5;
+  border-radius: 10px;
+  outline: none;
+  transition: all 0.3s ease;
+  font-size: 1rem;
+}
+
+.search-input:focus,
+.sort-select:focus {
+  border-color: #007f66;
+  box-shadow: 0 0 10px rgba(0, 191, 165, 0.5);
+}
+
+h2{
+  text-align: left;
+}
+
+.table-container {
+  max-height: 69vh;
+  overflow-y: auto;
+  overflow-x: auto;
+  border: 1px solid #ddd;
+  border-radius: 10px;
+  background-color: #fff;
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+  height: calc(100vh - 100px);
+}
+
+.guest-link {
+  text-decoration: none; /* Remove underline */
+  color: #3498db; /* Modern blue color */
+  font-weight: 600; /* Make the text bold */
+  cursor: pointer;
+  transition: color 0.2s ease-in-out, box-shadow 0.2s ease-in-out;
+}
+
+.guest-link:hover {
+  color: #2980b9; /* Darker blue on hover */
+  text-decoration: none; /* Ensure underline is not added on hover */
+  box-shadow: 0 2px 0 #2980b9; /* Add a subtle shadow effect */
+}
+
+table {
   width: 100%;
   border-collapse: collapse;
-  margin-top: 20px;
-  background-color: #fff;
-  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
 }
 
-.qr-codes-table th,
-.qr-codes-table td {
-  padding: 12px 15px;
+th,
+td {
+  border: 1px solid #ccc;
+  padding: 10px;
   text-align: left;
-  border-bottom: 1px solid #ddd;
+  text-transform: capitalize;
 }
 
-.qr-codes-table th {
-  background-color: #3498db;
-  color: white;
+th {
+  background-color: #e0e0e0;
+  color: #00bfa5;
 }
 
-.qr-codes-table tr:nth-child(even) {
-  background-color: #f9f9f9;
+td{
+  font-size: 0.9rem;
 }
 
-.qr-codes-table button {
+tr:nth-child(even) {
+  background-color: #f1f1f1;
+}
+
+.table-container tr:nth-child(even) {
+  background-color: #f1f1f1;
+}
+
+.table-container button {
   padding: 8px 12px;
   background-color: #2ecc71;
   color: white;
@@ -409,15 +534,15 @@ export default {
   margin-right: 5px;
 }
 
-.qr-codes-table button:hover {
+.table-container button:hover {
   background-color: #27ae60;
 }
 
-.qr-codes-table .delete-button {
+.table-container .delete-button {
   background-color: #e74c3c;
 }
 
-.qr-codes-table .delete-button:hover {
+.table-container .delete-button:hover {
   background-color: #c0392b;
 }
 
@@ -427,19 +552,54 @@ export default {
   left: 0;
   width: 100%;
   height: 100%;
-  background-color: rgba(0, 0, 0, 0.5);
+  background: rgba(0, 0, 0, 0.7);
   display: flex;
-  justify-content: center;
   align-items: center;
+  justify-content: center;
   z-index: 1000;
 }
 
 .modal {
-  background-color: #fff;
+  background-color: #ffffff;
+  border-radius: 15px;
   padding: 20px;
-  border-radius: 8px;
-  width: 400px;
-  max-width: 100%;
+  max-width: 500px;
+  width: 90%;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+  animation: fadeIn 0.3s ease;
+}
+
+.modal h3 {
+  color: #007f66;
+  text-align: center;
+  margin-bottom: 20px;
+}
+
+/* Form Group */
+.form-group {
+  margin-bottom: 15px;
+}
+
+.form-group label {
+  font-weight: bold;
+  color: #333;
+  margin-bottom: 5px;
+  display: block;
+}
+
+.form-group input,
+.form-group textarea {
+  width: 100%;
+  padding: 10px;
+  border: 2px solid #00bfa5;
+  border-radius: 10px;
+  outline: none;
+  transition: border-color 0.2s ease;
+}
+
+.form-group input:focus,
+.form-group textarea:focus {
+  border-color: #007f66;
 }
 
 .modal .download-button {
@@ -459,22 +619,154 @@ export default {
 
 .modal button {
   padding: 10px 20px;
-  background-color: #e74c3c;
   color: white;
   border: none;
   cursor: pointer;
   border-radius: 5px;
 }
 
-.expire-button {
-  background-color: #e74c3c;
-  color: white;
+.current-image {
+  display: block;
+  width: 100px;
+  height: 100px;
+  object-fit: cover;
+  border-radius: 10px;
+  margin-top: 10px;
 }
 
-.current-image {
-  width: 80px;
-  height: 80px;
-  border-radius: 4px;
-  margin-top: 10px;
+/* Form Actions */
+.form-actions {
+  display: flex;
+  justify-content: space-between;
+  gap: 10px;
+  margin-top: 20px;
+}
+
+/* Buttons */
+.save-button {
+  background-color: #007f66;
+  color: #fff;
+  border: none;
+  padding: 10px 20px;
+  border-radius: 8px;
+  cursor: pointer;
+  font-weight: bold;
+  transition: background-color 0.2s ease;
+}
+
+.save-button:hover {
+  background-color: #005a48;
+}
+
+.cancel-button {
+  background-color: #f39c12;
+  color: #fff;
+  border: none;
+  padding: 10px 20px;
+  border-radius: 8px;
+  cursor: pointer;
+  font-weight: bold;
+  transition: background-color 0.2s ease;
+}
+
+.cancel-button:hover {
+  background-color: #d08704;
+}
+
+.expire-button {
+  background-color: #c0392b;
+  color: #fff;
+  border: none;
+  padding: 10px 20px;
+  border-radius: 8px;
+  cursor: pointer;
+  font-weight: bold;
+  transition: background-color 0.2s ease;
+}
+
+.expire-button:hover {
+  background-color: #a93226;
+}
+
+/* Animation */
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(-20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Responsive Styles */
+@media (max-width: 768px) {
+  .main-content {
+    margin-left: 0;
+    padding: 10px;
+  }
+
+  .content-container {
+    padding: 15px;
+  }
+
+  .controls {
+    flex-direction: column;
+  }
+
+  .search-input,
+  .sort-select {
+    width: 100%;
+    font-size: 0.9rem;
+  }
+
+  table {
+    font-size: 0.8rem;
+  }
+
+  th,
+  td {
+    padding: 8px;
+  }
+
+  .modal {
+    max-width: 100%;
+    padding: 15px;
+  }
+
+  button {
+    width: 100%;
+    padding: 10px;
+  }
+}
+
+/* Extra Small Screens */
+@media (max-width: 480px) {
+  .search-input,
+  .sort-select,
+  input[type="text"],
+  input[type="datetime-local"],
+  textarea {
+    font-size: 0.8rem;
+    padding: 8px;
+  }
+
+  .content-container{
+    margin-left: 0px;
+  }
+
+  .form-actions {
+    flex-direction: column;
+  }
+
+  button {
+    font-size: 0.9rem;
+  }
+
+  .current-image {
+    width: 80px;
+    height: 80px;
+  }
 }
 </style>

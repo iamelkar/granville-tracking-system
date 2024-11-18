@@ -88,49 +88,6 @@ export default {
       isSidebarVisible: false,
     };
   },
-  methods: {
-    toggleSidebar() {
-      this.isSidebarVisible = !this.isSidebarVisible;
-      if (this.isSidebarVisible) {
-        document.addEventListener("click", this.handleOutsideClick);
-      } else {
-        document.removeEventListener("click", this.handleOutsideClick);
-      }
-    },
-
-    handleOutsideClick(event) {
-      const sidebar = this.$refs.sidebar.$el;
-      const toggleButton = document.querySelector(".sidebar-toggle");
-
-      // Check if the click was outside the sidebar and toggle button
-      if (!sidebar || !toggleButton) {
-        console.warn("Sidebar or toggle button reference is missing.");
-        return;
-      }
-
-      // Check if the click was outside the sidebar and toggle button
-      if (
-        !sidebar.contains(event.target) &&
-        !toggleButton.contains(event.target)
-      ) {
-        this.isSidebarVisible = false;
-        document.removeEventListener("click", this.handleOutsideClick);
-      }
-      console.log("Clicked element:", event.target);
-      console.log("Sidebar element:", sidebar);
-    },
-  },
-  onBeforeUnmount() {
-    document.removeEventListener("click", this.handleOutsideClick);
-  },
-  mounted() {
-    // Ensure the sidebar reference is ready
-    if (this.$refs.sidebarRef) {
-      console.log("Sidebar reference is available:", this.$refs.sidebarRef);
-    } else {
-      console.warn("Sidebar reference is not available.");
-    }
-  },
   setup() {
     const user = ref({});
     const accountCreated = ref("");
@@ -334,11 +291,7 @@ export default {
   margin: 0;
   padding: 0;
   box-sizing: border-box;
-}
-
-/* Style for the container */
-body {
-  font-family: Arial, sans-serif;
+  font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
 }
 
 /* Sidebar styles */
@@ -359,10 +312,14 @@ body {
 
 /* Main content area */
 .main-content {
-  margin-left: 300px; /* Make room for the fixed sidebar */
+  margin-left: 250px; /* Make room for the fixed sidebar */
   padding: 20px;
   background-color: #00bfa5;
   height: 100vh;
+}
+
+.content{
+  margin-left: 50px;
 }
 
 .dashboard-grid {
@@ -438,6 +395,11 @@ h1 {
   color: #000000; /* Match the border color */
   font-weight: bold;
   background-color: #eb7d51;
+}
+
+.modal-content,
+.modal-content-exit p {
+  font-size: 2rem;
 }
 
 .profile-details {

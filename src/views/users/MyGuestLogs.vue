@@ -34,13 +34,12 @@
           </select>
 
           <select v-model="sortOption" class="sort-select">
-            <option value="alphabetical">Sort by Name (A-Z)</option>
             <option value="latest">Sort by Latest</option>
             <option value="first">Sort by First Created</option>
           </select>
         </div>
 
-        <div v-if="filteredLog && filteredLogs.length === 0">
+        <div v-if="filteredLogs && filteredLogs.length === 0">
           <p>No scans found for your account</p>
         </div>
 
@@ -65,8 +64,8 @@
                 <td>{{ log.category || "N/A" }}</td>
                 <td>
                   {{
-                    log.scanTime?.seconds
-                      ? new Date(log.scanTime.seconds * 1000).toLocaleString()
+                    log.rawTimestamp?.seconds
+                      ? new Date(log.rawTimestamp.seconds * 1000).toLocaleString()
                       : "Unknown"
                   }}
                 </td>
@@ -142,11 +141,14 @@ export default {
           const logData = logDoc.data();
           console.log("Log data:", logData);
 
+          const rawTimestamp = logData.scanTime || null;
+          console.log("Assigned rawTimestamp:", rawTimestamp);
+
           logs.push({
             id: logDoc.id,
             guestName: logData.guestName,
             category: logData.category || "N/A",
-            rawTimestamp: logData.scanTime,
+            rawTimestamp,
             message: logData.message || "N/A",
             additionalDetails: logData.additionalDetails || "N/A",
             status: logData.status || "Unknown",
@@ -162,8 +164,6 @@ export default {
 
     // Computed property for filtered logs
     const filteredLogs = computed(() => {
-      console.log("Calculating filteredLogs...");
-      console.log("qrLogs value:", qrLogs.value);
 
       if (!qrLogs.value || !qrLogs.value.length) return [];
 
@@ -174,7 +174,7 @@ export default {
       const categoryFilter = selectedCategory.value.toLowerCase();
       const statusFilter = selectedStatus.value.toLowerCase();
 
-      const filtered = qrLogs.value.filter((log) => {
+      let filtered = qrLogs.value.filter((log) => {
         const matchesSearch = (log.guestName || "")
           .toLowerCase()
           .includes(search);
@@ -190,6 +190,19 @@ export default {
 
         return matchesSearch && matchesDate && matchesCategory && matchesStatus;
       });
+
+      // Sort the filtered logs based on the sort option
+      if (sortOption.value === "latest") {
+        // Sort by latest (descending order)
+        filtered = filtered.sort(
+          (a, b) => b.rawTimestamp?.seconds - a.rawTimestamp?.seconds
+        );
+      } else if (sortOption.value === "first") {
+        // Sort by first created (ascending order)
+        filtered = filtered.sort(
+        (a, b) => a.rawTimestamp?.seconds - b.rawTimestamp?.seconds
+      );
+    }
 
       console.log("Filtered logs count:", filtered.length);
       return filtered;
@@ -244,6 +257,7 @@ export default {
   padding: 20px;
   background-color: #00bfa5;
   height: 100vh;
+  font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
 }
 
 .content-container {
@@ -321,14 +335,16 @@ td {
   border: 1px solid #ccc;
   padding: 10px;
   text-align: left;
+  text-transform: capitalize;
 }
 
 th {
-  background-color: #f4f4f4;
+  background-color: #e0e0e0;
+  color: #00bfa5;
 }
 
 tr:nth-child(even) {
-  background-color: #f9f9f9;
+  background-color: #f1f1f1;
 }
 
 .logs-table {

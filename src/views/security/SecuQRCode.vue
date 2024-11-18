@@ -25,11 +25,7 @@ export default {
   margin: 0;
   padding: 0;
   box-sizing: border-box;
-}
 
-/* Style for the container */
-body {
-  font-family: Arial, sans-serif;
 }
 
 /* Sidebar styles */

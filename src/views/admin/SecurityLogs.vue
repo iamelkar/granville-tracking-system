@@ -248,7 +248,7 @@ h2 {
   border: 1px solid #ddd;
   background-color: white;
   box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
-  height: calc(100vh - 100px);
+  height: calc(83vh - 205px);
 }
 
 .logs-table {

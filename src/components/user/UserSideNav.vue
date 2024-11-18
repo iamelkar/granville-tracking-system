@@ -18,22 +18,25 @@
     <nav class="nav">
       <ul>
         <li>
-          <router-link to="/user-dashboard">Dashboard</router-link>
+          <router-link to="/user-dashboard" @click="reloadIfActive('/user-dashboard')">Dashboard</router-link>
         </li>
         <li>
-          <router-link to="/generate-qr">QR Code Generate</router-link>
+          <router-link to="/generate-qr" @click="reloadIfActive('/generate-qr')">QR Code Generate</router-link>
         </li>
         <li>
-          <router-link to="/my-logs">My Logs</router-link>
+          <router-link to="/my-logs" @click="reloadIfActive('/my-logs')">My Logs</router-link>
         </li>
         <li>
-          <router-link to="/my-guest-logs">Guest Logs</router-link>
+          <router-link to="/my-guest-logs" @click="reloadIfActive('/my-guest-logs')">Guest Logs</router-link>
         </li>
         <!-- <li>
           <router-link to="/user-notification">Notifications</router-link>
         </li> -->
         <li>
-          <router-link to="/contact-us">Report</router-link>
+          <router-link to="/resident-faq" @click="reloadIfActive('/resident-faq')">FAQ</router-link>
+        </li>
+        <li>
+          <router-link to="/contact-us" @click="reloadIfActive('/contact-us')">Report</router-link>
         </li>
       </ul>
     </nav>
@@ -100,6 +103,12 @@ export default {
       }
     };
 
+    const reloadIfActive = (path) => {
+      if(router.currentRoute.value.path === path){
+        window.location.reload()
+      }
+    }
+
     onBeforeUnmount(() => {
       document.removeEventListener("click", handleOutsideClick);
       console.log("Cleaned up event listeners on unmount");
@@ -115,6 +124,7 @@ export default {
       toggleButton,
       toggleSidebar,
       handleSignOut,
+      reloadIfActive
     };
   },
 };
@@ -206,19 +216,24 @@ export default {
   transition: background-color 0.3s ease, color 0.3s ease;
 }
 
-.nav li a:hover {
+.nav li:hover{
   background-color: #007f66;
-  color: white;
+  padding-bottom: 10px;
+  border-radius: 17px;
 }
 
-.nav a.router-link-exact-active {
+.nav li a.router-link-exact-active {
   background-color: skyblue;
   color: white;
   width: 100%;
   display: block;
-  padding: 10px;
+  transform: translateY(-3px);
   box-sizing: border-box;
   border-radius: 20px;
+}
+
+.nav li a.router-link-exact-active {
+  padding: 12px;
 }
 
 /* Log Out Button */

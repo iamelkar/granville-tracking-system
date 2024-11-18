@@ -31,6 +31,9 @@
           <router-link to="/user-logs">Logs</router-link>
         </li> -->
         <li>
+          <router-link to="/security-faq">FAQ</router-link>
+        </li>
+        <li>
           <router-link to="/contact-us">Report</router-link>
         </li>
       </ul>
@@ -104,6 +107,10 @@ export default {
 </script>
 
 <style scoped>
+*{
+  font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+}
+
 .sidebar {
   width: 300px;
   height: 100vh;
@@ -113,6 +120,9 @@ export default {
   left: 0;
   top: 0;
   z-index: 1000;
+  padding: 20px;
+  border-radius: 0 20px 20px 0;
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
   transition: transform 0.3s ease-in-out;
 }
 
@@ -122,16 +132,20 @@ export default {
 
 /* Sidebar Toggle Button */
 .sidebar-toggle {
-  display: none;
+  display: block;
   position: absolute;
   top: 20px;
   left: 20px;
-  background-color: #3498db;
-  color: white;
+  background-color: rgba(52, 152, 219, 0.4);
+  color: rgba(255, 255, 255, 0.7);
   padding: 10px;
   border: none;
-  border-radius: 5px;
+  border-radius: 8px;
   cursor: pointer;
+  z-index: 1100;
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+  transition: background-color 0.3s ease, color 0.3s ease;
+  opacity: 0.8;
 }
 
 .welcome {

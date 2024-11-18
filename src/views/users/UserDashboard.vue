@@ -24,11 +24,17 @@
                 </p>
                 <p>
                   <strong>Address:</strong> {{ user.houseLotNumber }},
-                  {{ user.street }} St., Granville
+                  {{ user.street }} St., Granville {{ user.phase }}
                 </p>
                 <p><strong>Account created:</strong> {{ accountCreated }}</p>
                 <p><strong>Email:</strong> {{ user.email }}</p>
               </div>
+            </div>
+
+            <div class="reset-password-container">
+              <button class="reset-password-button" @click="resetPassword">
+                  Reset Password
+                </button>
             </div>
           </div>
           <br />
@@ -51,7 +57,7 @@ import UserSideNav from "@/components/user/UserSideNav.vue";
 import { ref, onMounted, onBeforeUnmount } from "vue";
 import { db, storage } from "@/firebase";
 import { doc, getDoc } from "firebase/firestore";
-import { getAuth, onAuthStateChanged } from "firebase/auth";
+import { getAuth, onAuthStateChanged, sendPasswordResetEmail } from "firebase/auth";
 import {
   getDownloadURL,
   ref as storageRef,
@@ -109,6 +115,22 @@ export default {
       }
     };
 
+    // Reset password function
+    const resetPassword = async () => {
+      if (!user.value.email) {
+        alert("No email found for this account.");
+        return;
+      }
+
+      try {
+        await sendPasswordResetEmail(auth, user.value.email);
+        alert("Password reset email sent. Please check your inbox.");
+      } catch (error) {
+        console.error("Error sending password reset email:", error);
+        alert(`Error: ${error.message}`);
+      }
+    };
+
     onMounted(() => {
       fetchUserProfile();
     });
@@ -119,6 +141,7 @@ export default {
       profilePictureUrl,
       defaultProfilePicture,
       uploadProfilePicture,
+      resetPassword
     };
   },
 };
@@ -257,6 +280,37 @@ export default {
   display: flex;
   flex-direction: column;
   align-items: center;
+}
+
+.reset-password-container {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  margin-top: 20px;
+}
+
+.reset-password-button {
+  padding: 12px 20px;
+  font-size: 1rem;
+  font-weight: bold;
+  color: #fff;
+  background: linear-gradient(to right, #007f66, #00bfa5);
+  border: none;
+  border-radius: 10px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  box-shadow: 0 4px 10px rgba(0, 191, 165, 0.2);
+}
+
+.reset-password-button:hover {
+  background: linear-gradient(to right, #00bfa5, #007f66);
+  box-shadow: 0 6px 12px rgba(0, 191, 165, 0.4);
+  transform: translateY(-2px);
+}
+
+.reset-password-button:active {
+  transform: translateY(0);
+  box-shadow: 0 2px 6px rgba(0, 191, 165, 0.2);
 }
 
 .upload-button {

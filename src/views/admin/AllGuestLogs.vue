@@ -293,7 +293,7 @@ h2 {
   border-radius: 10px;
   background-color: #fff;
   box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
-  height: calc(100vh - 100px);
+  height: calc(83vh - 205px);
 }
 
 .logs-table {
