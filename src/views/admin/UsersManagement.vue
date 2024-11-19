@@ -106,15 +106,30 @@
               </div>
               <div class="form-group">
                 <label for="phase">Phase:</label>
-                <input type="text" v-model="selectedUser.phase" id="phase" required />
+                <input
+                  type="text"
+                  v-model="selectedUser.phase"
+                  id="phase"
+                  required
+                />
               </div>
               <div class="form-group">
                 <label for="houseBlockAndLot">House Block & Lot Number:</label>
-                <input type="text" v-model="selectedUser.houseLotNumber" id="houseLotNumber" required />
+                <input
+                  type="text"
+                  v-model="selectedUser.houseLotNumber"
+                  id="houseLotNumber"
+                  required
+                />
               </div>
               <div class="form-group">
                 <label for="street">Street Name:</label>
-                <input type="text" v-model="selectedUser.street" id="street" required />
+                <input
+                  type="text"
+                  v-model="selectedUser.street"
+                  id="street"
+                  required
+                />
               </div>
               <div class="form-group">
                 <label for="activeStatus">Active Status:</label>
@@ -164,7 +179,7 @@ import {
   doc,
   updateDoc,
   deleteDoc,
-  getDoc
+  getDoc,
 } from "firebase/firestore";
 import { connectStorageEmulator } from "firebase/storage";
 import { ref, computed } from "vue";
@@ -263,31 +278,31 @@ export default {
           activeStatus: selectedUser.value.activeStatus === "true",
         });
 
-        const rfidTag = selectedUser.value.rfidTag
+        const rfidTag = selectedUser.value.rfidTag;
 
-        if(rfidTag){
-          const rfidRef = doc(db, "residents", rfidTag)
-          const rfidDoc = await getDoc(rfidRef)
+        if (rfidTag) {
+          const rfidRef = doc(db, "residents", rfidTag);
+          const rfidDoc = await getDoc(rfidRef);
 
-          if(rfidDoc.exists()){
-            if(selectedUser.value.activeStatus === "false"){
+          if (rfidDoc.exists()) {
+            if (selectedUser.value.activeStatus === "false") {
               await updateDoc(rfidRef, {
                 assigned: false,
                 inactiveUser: true,
-              })
-              console.log("RFID document updated to inactive successfully")
+              });
+              console.log("RFID document updated to inactive successfully");
             }
 
-            if(selectedUser.value.activeStatus === "true"){
+            if (selectedUser.value.activeStatus === "true") {
               await updateDoc(rfidRef, {
                 assigned: true,
-                inactiveUser: false
-              })
-              console.log("RFID document updated to active successfully")
+                inactiveUser: false,
+              });
+              console.log("RFID document updated to active successfully");
             }
           } else {
-            console.error("RFID Document not found.")
-            alert("RFID document not found. Please check the RFID tag.")
+            console.error("RFID Document not found.");
+            alert("RFID document not found. Please check the RFID tag.");
           }
         }
         alert("User updated successfully!");
@@ -336,9 +351,13 @@ export default {
             const rfidDoc = await getDoc(rfidRef);
             if (rfidDoc.exists()) {
               await deleteDoc(rfidRef);
-              console.log("RFID document deleted successfully from the 'residents' collection.");
+              console.log(
+                "RFID document deleted successfully from the 'residents' collection."
+              );
             } else {
-              console.error("RFID document not found in the 'residents' collection.");
+              console.error(
+                "RFID document not found in the 'residents' collection."
+              );
               alert("RFID document not found. Please check the RFID tag.");
             }
           }
@@ -425,6 +444,16 @@ export default {
 
 .table-container td {
   background-color: #fff;
+}
+
+.table-container tbody tr {
+  transition: background-color 0.3s ease, transform 0.2s ease;
+}
+
+.table-container tbody tr:hover td {
+  background-color: #b0bec5; /* Light green background on hover */
+  transform: scale(1.02);
+  cursor: pointer;
 }
 
 .modal-overlay {
