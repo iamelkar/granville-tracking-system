@@ -127,7 +127,7 @@
             </div>
 
             <!-- RFID Tag Selection -->
-            <div class="form-group">
+            <div class="form-group" v-if="newResident.role === 'resident'">
               <label for="rfidTag">RFID Tag:</label>
               <select v-model="newResident.rfidTag" id="rfidTag" required>
                 <option value="" disabled>Select an unassigned RFID tag</option>
@@ -281,18 +281,38 @@ export default {
           return;
         }
 
-        // Check if RFID tag already exists in the users collection
-        const rfidQuery = query(
-          collection(db, "users"),
-          where("rfidTag", "==", newResident.value.rfidTag)
-        );
-        const rfidQuerySnapshot = await getDocs(rfidQuery);
+        // // Check if RFID tag already exists in the users collection
+        // const rfidQuery = query(
+        //   collection(db, "users"),
+        //   where("rfidTag", "==", newResident.value.rfidTag)
+        // );
+        // const rfidQuerySnapshot = await getDocs(rfidQuery);
 
-        if (!rfidQuerySnapshot.empty) {
-          alert(
-            "This RFID tag is already assigned to another user. Please select a different RFID tag."
+        // if (!rfidQuerySnapshot.empty) {
+        //   alert(
+        //     "This RFID tag is already assigned to another user. Please select a different RFID tag."
+        //   );
+        //   return; // Exit if the RFID tag is already in use
+        // }
+
+        // If the role is 'resident', validate RFID
+        if (newResident.value.role === "resident") {
+          // Check if RFID tag already exists in the 'users' collection
+          const rfidQuery = query(
+            collection(db, "users"),
+            where("rfidTag", "==", newResident.value.rfidTag)
           );
-          return; // Exit if the RFID tag is already in use
+          const rfidQuerySnapshot = await getDocs(rfidQuery);
+
+          if (!rfidQuerySnapshot.empty) {
+            alert(
+              "This RFID tag is already assigned to another user. Please select a different RFID tag."
+            );
+            return; // Exit if the RFID tag is already in use
+          }
+        } else {
+          // For admin or security, set RFID tag as null
+          newResident.value.rfidTag = null;
         }
 
         await setDoc(doc(db, "users", newResident.value.uid), {
@@ -300,19 +320,21 @@ export default {
           lastName: newResident.value.lastName,
           email: newResident.value.email,
           role: newResident.value.role,
-          phase: newResident.value.phase,
-          street: newResident.value.street,
-          houseLotNumber: newResident.value.houseLotNumber,
+          phase: newResident.value.phase || null,
+          street: newResident.value.street || null,
+          houseLotNumber: newResident.value.houseLotNumber || null,
           contactNumber: newResident.value.contactNumber,
-          rfidTag: newResident.value.rfidTag,
+          rfidTag: newResident.value.rfidTag || null,
           activeStatus: newResident.value.activeStatus === "true",
           createdAt: serverTimestamp(),
         });
 
-        // Mark the RFID as assigned
-        await updateDoc(doc(db, "residents", newResident.value.rfidTag), {
-          assigned: true,
-        });
+        // If role is 'resident', mark the RFID tag as assigned
+        if (newResident.value.role === "resident") {
+          await updateDoc(doc(db, "residents", newResident.value.rfidTag), {
+            assigned: true,
+          });
+        }
 
         alert("User information added successfully!");
 
