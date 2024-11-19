@@ -16,6 +16,7 @@
             Sort by:
             <select v-model="sortOption" class="sort-select">
               <option value="latest">Latest</option>
+              <option value="oldest">Oldest</option>
               <option value="startDate">Start Date</option>
               <option value="expirationTime">Expiration Time</option>
             </select>
@@ -37,9 +38,27 @@
               <tr v-for="qrCode in filteredQrCodes" :key="qrCode.id">
                 <td>{{ qrCode.guestName || "N/A" }}</td>
                 <td>{{ qrCode.creatorName || "Unknown Creator" }}</td>
-                <td>{{ qrCode.createdAt }}</td>
-                <td>{{ qrCode.startDate }}</td>
-                <td>{{ qrCode.expirationTime }}</td>
+                <td>
+                  {{
+                    qrCode.createdAt
+                      ? qrCode.createdAt.toLocaleString()
+                      : "Unknown"
+                  }}
+                </td>
+                <td>
+                  {{
+                    qrCode.startDate
+                      ? qrCode.startDate.toLocaleString()
+                      : "Unknown"
+                  }}
+                </td>
+                <td>
+                  {{
+                    qrCode.expirationTime
+                      ? qrCode.expirationTime.toLocaleString()
+                      : "Unknown"
+                  }}
+                </td>
               </tr>
             </tbody>
           </table>
@@ -76,14 +95,14 @@ export default {
             id: doc.id,
             guestName: data.guestName || "N/A",
             creatorName: data.creatorName || "Unknown Creator",
-            createdAt: data.createdAt
-              ? data.createdAt.toDate().toLocaleString()
-              : "Unknown",
+            createdAt: data.createdAt ? data.createdAt.toDate() : "Unknown",
             startDate: data.startDate
-              ? data.startDate.toDate().toLocaleString()
+              ? data.startDate.toDate()
+              : data.createdAt.toDate()
+              ? data.createdAt.toDate()
               : "Unknown",
             expirationTime: data.expirationTime
-              ? data.expirationTime.toDate().toLocaleString()
+              ? data.expirationTime.toDate()
               : "Unknown",
           });
         });
@@ -115,6 +134,8 @@ export default {
         result.sort(
           (a, b) => new Date(a.expirationTime) - new Date(b.expirationTime)
         );
+      } else if (sortOption.value === "oldest") {
+        result.sort((a, b) => a.createdAt - b.createdAt);
       }
 
       return result;
@@ -256,7 +277,7 @@ button:hover {
     margin-left: 0px;
   }
 
-  .controls{
+  .controls {
     align-items: flex-end;
   }
   .search-input {

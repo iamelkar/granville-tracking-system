@@ -31,6 +31,9 @@
           <router-link to="/user-logs">Logs</router-link>
         </li> -->
         <li>
+          <router-link to="/my-guest-logs">Guest Logs</router-link>
+        </li>
+        <li>
           <router-link to="/security-faq">FAQ</router-link>
         </li>
         <li>
@@ -107,7 +110,7 @@ export default {
 </script>
 
 <style scoped>
-*{
+* {
   font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
 }
 

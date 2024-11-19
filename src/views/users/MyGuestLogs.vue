@@ -65,7 +65,9 @@
                 <td>
                   {{
                     log.rawTimestamp?.seconds
-                      ? new Date(log.rawTimestamp.seconds * 1000).toLocaleString()
+                      ? new Date(
+                          log.rawTimestamp.seconds * 1000
+                        ).toLocaleString()
                       : "Unknown"
                   }}
                 </td>
@@ -164,7 +166,6 @@ export default {
 
     // Computed property for filtered logs
     const filteredLogs = computed(() => {
-
       if (!qrLogs.value || !qrLogs.value.length) return [];
 
       const search = searchQuery.value.toLowerCase();
@@ -200,9 +201,9 @@ export default {
       } else if (sortOption.value === "first") {
         // Sort by first created (ascending order)
         filtered = filtered.sort(
-        (a, b) => a.rawTimestamp?.seconds - b.rawTimestamp?.seconds
-      );
-    }
+          (a, b) => a.rawTimestamp?.seconds - b.rawTimestamp?.seconds
+        );
+      }
 
       console.log("Filtered logs count:", filtered.length);
       return filtered;
