@@ -102,8 +102,15 @@
 <script>
 import UserSideNav from "@/components/user/UserSideNav.vue";
 import { db, auth } from "@/firebase";
-import { collection, query, where, getDocs, orderBy } from "firebase/firestore";
-import { ref, onMounted, computed } from "vue";
+import {
+  collection,
+  query,
+  where,
+  getDocs,
+  orderBy,
+  onSnapshot,
+} from "firebase/firestore";
+import { ref, onMounted, computed, onUnmounted } from "vue";
 
 export default {
   components: {
@@ -117,34 +124,73 @@ export default {
     const selectedCategory = ref("");
     const selectedStatus = ref("all");
     const currentUserEmail = ref(auth.currentUser?.email || "");
+    let unsubscribe = null;
 
     // Fetch logs created by the current user only
-    const fetchQrLogs = async () => {
-      console.log("Starting fetchQrLogs...");
+    // const fetchQrLogs = async () => {
+    //   console.log("Starting fetchQrLogs...");
 
+    //   if (!auth.currentUser) {
+    //     console.error("No user logged in");
+    //     return;
+    //   }
+
+    //   currentUserEmail.value = auth.currentUser.email;
+    //   const logs = [];
+    //   try {
+    //     const qrLogsQuery = query(
+    //       collection(db, "qr_scan_logs"),
+    //       where("qrCodeCreator", "==", currentUserEmail.value),
+    //       orderBy("scanTime", "desc")
+    //     );
+
+    //     const querySnapshot = await getDocs(qrLogsQuery);
+    //     console.log("Fetched logs count:", querySnapshot.size);
+
+    //     querySnapshot.forEach((logDoc) => {
+    //       const logData = logDoc.data();
+    //       console.log("Log data:", logData);
+
+    //       const rawTimestamp = logData.scanTime || null;
+    //       console.log("Assigned rawTimestamp:", rawTimestamp);
+
+    //       logs.push({
+    //         id: logDoc.id,
+    //         guestName: logData.guestName,
+    //         category: logData.category || "N/A",
+    //         rawTimestamp,
+    //         message: logData.message || "N/A",
+    //         additionalDetails: logData.additionalDetails || "N/A",
+    //         status: logData.status || "Unknown",
+    //       });
+    //     });
+
+    //     qrLogs.value = logs;
+    //     console.log("qrLogs value after fetching:", qrLogs.value);
+    //   } catch (error) {
+    //     console.error("Error fetching QR logs:", error);
+    //   }
+    // };
+
+    // Real-time Listener for QR Logs
+    const setupRealtimeListener = () => {
       if (!auth.currentUser) {
         console.error("No user logged in");
         return;
       }
 
       currentUserEmail.value = auth.currentUser.email;
-      const logs = [];
-      try {
-        const qrLogsQuery = query(
-          collection(db, "qr_scan_logs"),
-          where("qrCodeCreator", "==", currentUserEmail.value),
-          orderBy("scanTime", "desc")
-        );
+      const qrLogsQuery = query(
+        collection(db, "qr_scan_logs"),
+        where("qrCodeCreator", "==", currentUserEmail.value),
+        orderBy("scanTime", "desc")
+      );
 
-        const querySnapshot = await getDocs(qrLogsQuery);
-        console.log("Fetched logs count:", querySnapshot.size);
-
-        querySnapshot.forEach((logDoc) => {
+      unsubscribe = onSnapshot(qrLogsQuery, (snapshot) => {
+        const logs = [];
+        snapshot.forEach((logDoc) => {
           const logData = logDoc.data();
-          console.log("Log data:", logData);
-
           const rawTimestamp = logData.scanTime || null;
-          console.log("Assigned rawTimestamp:", rawTimestamp);
 
           logs.push({
             id: logDoc.id,
@@ -158,11 +204,16 @@ export default {
         });
 
         qrLogs.value = logs;
-        console.log("qrLogs value after fetching:", qrLogs.value);
-      } catch (error) {
-        console.error("Error fetching QR logs:", error);
-      }
+        console.log("Real-time QR logs updated:", logs);
+      });
     };
+
+    // Cleanup the listener when the component is unmounted
+    onUnmounted(() => {
+      if (unsubscribe) {
+        unsubscribe();
+      }
+    });
 
     // Computed property for filtered logs
     const filteredLogs = computed(() => {
@@ -219,9 +270,13 @@ export default {
       return "log-other";
     };
 
+    // onMounted(() => {
+    //   console.log("Component mounted, fetching logs...");
+    //   fetchQrLogs();
+    // });
+
     onMounted(() => {
-      console.log("Component mounted, fetching logs...");
-      fetchQrLogs();
+      setupRealtimeListener();
     });
 
     return {

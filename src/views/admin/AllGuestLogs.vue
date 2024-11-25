@@ -76,8 +76,14 @@
 <script>
 import SidebarNav from "@/components/SidebarNav.vue";
 import { db } from "@/firebase";
-import { collection, getDocs, doc, getDoc } from "firebase/firestore";
-import { ref, onMounted, computed } from "vue";
+import {
+  collection,
+  getDocs,
+  doc,
+  getDoc,
+  onSnapshot,
+} from "firebase/firestore";
+import { ref, onMounted, computed, onUnmounted } from "vue";
 
 export default {
   components: {
@@ -89,6 +95,7 @@ export default {
     const sortOption = ref("latest");
     const selectedDate = ref("");
     const selectedStatus = ref("all");
+    let unsubscribe = null;
 
     // Function to extract creatorName from 'guest_qrcodes' collection
     const fetchCreatorName = async (documentId) => {
@@ -118,13 +125,55 @@ export default {
       return "Unknown";
     };
 
-    const fetchQrLogs = async () => {
-      const logs = [];
+    // const fetchQrLogs = async () => {
+    //   const logs = [];
 
-      try {
-        const qrLogsSnapshot = await getDocs(collection(db, "qr_scan_logs"));
+    //   try {
+    //     const qrLogsSnapshot = await getDocs(collection(db, "qr_scan_logs"));
 
-        for (const logDoc of qrLogsSnapshot.docs) {
+    //     for (const logDoc of qrLogsSnapshot.docs) {
+    //       const logData = logDoc.data();
+
+    //       // Extract document ID from scanData URL
+    //       const documentId = logData.scanData
+    //         ? logData.scanData.split("/").pop()
+    //         : "";
+
+    //       // Fetch creatorName using the extracted document ID
+    //       const creatorName = await fetchCreatorName(documentId);
+
+    //       // Construct the log entry
+    //       const logEntry = {
+    //         id: logDoc.id,
+    //         guestName: logData.guestName,
+    //         creatorName,
+    //         category: logData.category || "QR Code",
+    //         timestamp: logData.scanTime
+    //           ? logData.scanTime.toDate().toLocaleString()
+    //           : "Unknown",
+    //         rawTimestamp: logData.scanTime,
+    //         message: logData.message || "N/A",
+    //         additionalDetails: logData.additionalDetails || null,
+    //         status: logData.status,
+    //       };
+
+    //       logs.push(logEntry);
+    //     }
+
+    //     qrLogs.value = logs;
+    //     console.log("All QR logs processed and stored.");
+    //   } catch (error) {
+    //     console.error("Error fetching QR logs:", error);
+    //   }
+    // };
+
+    // Real-time Listener for QR Logs
+    const setupRealtimeListener = () => {
+      const qrLogsCollection = collection(db, "qr_scan_logs");
+
+      unsubscribe = onSnapshot(qrLogsCollection, async (snapshot) => {
+        const logs = [];
+        for (const logDoc of snapshot.docs) {
           const logData = logDoc.data();
 
           // Extract document ID from scanData URL
@@ -136,7 +185,7 @@ export default {
           const creatorName = await fetchCreatorName(documentId);
 
           // Construct the log entry
-          const logEntry = {
+          logs.push({
             id: logDoc.id,
             guestName: logData.guestName,
             creatorName,
@@ -148,17 +197,20 @@ export default {
             message: logData.message || "N/A",
             additionalDetails: logData.additionalDetails || null,
             status: logData.status,
-          };
-
-          logs.push(logEntry);
+          });
         }
 
         qrLogs.value = logs;
-        console.log("All QR logs processed and stored.");
-      } catch (error) {
-        console.error("Error fetching QR logs:", error);
-      }
+        console.log("QR logs updated in real-time:", logs);
+      });
     };
+
+    // Cleanup the listener when the component unmounts
+    onUnmounted(() => {
+      if (unsubscribe) {
+        unsubscribe();
+      }
+    });
 
     const filteredLogs = computed(() => {
       const search = searchQuery.value.toLowerCase();
@@ -205,7 +257,10 @@ export default {
       return "";
     };
 
-    onMounted(fetchQrLogs);
+    // onMounted(fetchQrLogs);
+    onMounted(() => {
+      setupRealtimeListener();
+    });
 
     return {
       searchQuery,

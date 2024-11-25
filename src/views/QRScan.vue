@@ -16,6 +16,9 @@
       <div v-if="showModal" class="modal">
         <p>{{ modalMessage }}</p>
         <button class="modal-close-btn" @click="closeModal">Close</button>
+        <button class="refresh-btn" @click="refreshPage">
+          Scan Another QR Code
+        </button>
       </div>
     </div>
   </div>
@@ -246,6 +249,10 @@ export default {
       );
     };
 
+    const refreshPage = () => {
+      window.location.reload();
+    };
+
     onMounted(() => {
       initializeQrScanner();
     });
@@ -268,6 +275,7 @@ export default {
       showModal,
       modalMessage,
       closeModal,
+      refreshPage,
     };
   },
 };
@@ -353,6 +361,22 @@ h2 {
   background-color: #005f4a;
 }
 
+.refresh-btn {
+  margin-top: 20px;
+  padding: 10px 20px;
+  background-color: #007f66;
+  color: white;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  font-size: 1rem;
+  font-weight: bold;
+  transition: background-color 0.3s ease;
+}
+
+.refresh-btn:hover {
+  background-color: #005f4a;
+}
 /* Additional styling for responsiveness */
 @media (max-width: 768px) {
   .main-content {
@@ -382,6 +406,11 @@ h2 {
   }
 
   .modal-close-btn {
+    padding: 10px;
+    font-size: 0.9rem;
+  }
+
+  .refresh-btn {
     padding: 10px;
     font-size: 0.9rem;
   }

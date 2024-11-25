@@ -18,23 +18,37 @@
     <nav class="nav">
       <ul>
         <li>
-          <router-link to="/security-dashboard">Dashboard</router-link>
+          <router-link
+            to="/security-dashboard"
+            @click="reloadIfActive('/security-dashboard')"
+            >Dashboard</router-link
+          >
         </li>
         <li>
-          <router-link to="/generate-qr">QR Code Generate</router-link>
+          <router-link to="/generate-qr" @click="reloadIfActive('/generate-qr')"
+            >QR Code Generate</router-link
+          >
         </li>
         <li>
-          <router-link to="/qr-scan">QR Code Scanner</router-link>
+          <router-link to="/qr-scan" @click="reloadIfActive('/qr-scan')"
+            >QR Code Scanner</router-link
+          >
           <!-- New Button -->
         </li>
         <!-- <li>
           <router-link to="/user-logs">Logs</router-link>
         </li> -->
         <li>
-          <router-link to="/security-faq">FAQ</router-link>
+          <router-link
+            to="/security-faq"
+            @click="reloadIfActive('/security-faq')"
+            >FAQ</router-link
+          >
         </li>
         <li>
-          <router-link to="/contact-us">Report</router-link>
+          <router-link to="/contact-us" @click="reloadIfActive('/contact-us')"
+            >Report</router-link
+          >
         </li>
       </ul>
     </nav>
@@ -91,6 +105,12 @@ export default {
       }
     };
 
+    const reloadIfActive = (path) => {
+      if (router.currentRoute.value.path === path) {
+        window.location.reload();
+      }
+    };
+
     onBeforeUnmount(() => {
       document.removeEventListener("click", handleOutsideClick);
     });
@@ -101,6 +121,7 @@ export default {
       toggleButton,
       toggleSidebar,
       handleSignOut,
+      reloadIfActive,
     };
   },
 };
@@ -222,6 +243,10 @@ export default {
   }
   .sidebar.active {
     transform: translateX(0);
+  }
+
+  .log-out {
+    margin-bottom: 50px;
   }
 }
 </style>

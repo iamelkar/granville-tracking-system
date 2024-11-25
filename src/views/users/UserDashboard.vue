@@ -4,7 +4,6 @@
 
     <!-- Main content on the right -->
     <div class="main-content" @click="handleOutsideClick">
-      <!-- <h1>THIS IS THE USER DASHBOARD</h1> -->
       <div class="container">
         <div class="dashboard-grid">
           <div class="profile">
@@ -30,22 +29,40 @@
                 <p><strong>Email:</strong> {{ user.email }}</p>
               </div>
             </div>
-
             <div class="reset-password-container">
               <button class="reset-password-button" @click="resetPassword">
-                  Reset Password
-                </button>
+                Reset Password
+              </button>
             </div>
-          </div>
-          <br />
-
-          <div class="system-alerts">
-            <h2>System Alerts ⚠️</h2>
           </div>
         </div>
 
+        <!-- Recent Activities Section -->
         <div class="recent-activities">
-          <h2>Recent Activity 📊</h2>
+          <h2 class="manage-link" @click="navigateToQRCodeManagement">
+            Manage QR Codes
+          </h2>
+          <div v-if="qrCodes.length === 0" class="no-activity">
+            <p>You have not generated any QR codes yet.</p>
+          </div>
+          <div class="table-container">
+            <table>
+              <thead>
+                <tr>
+                  <th>Guest Name</th>
+                  <th>Category</th>
+                  <th>Created At</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr v-for="code in qrCodes" :key="code.id">
+                  <td>{{ code.guestName || "N/A" }}</td>
+                  <td>{{ code.category || "N/A" }}</td>
+                  <td>{{ code.createdAt || "N/A" }}</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
         </div>
       </div>
     </div>
@@ -54,10 +71,17 @@
 
 <script>
 import UserSideNav from "@/components/user/UserSideNav.vue";
-import { ref, onMounted, onBeforeUnmount } from "vue";
+import { ref, onMounted } from "vue";
 import { db, storage } from "@/firebase";
-import { doc, getDoc } from "firebase/firestore";
-import { getAuth, onAuthStateChanged, sendPasswordResetEmail } from "firebase/auth";
+import {
+  collection,
+  query,
+  where,
+  getDocs,
+  doc,
+  getDoc,
+} from "firebase/firestore";
+import { getAuth, sendPasswordResetEmail } from "firebase/auth";
 import {
   getDownloadURL,
   ref as storageRef,
@@ -71,13 +95,15 @@ export default {
   setup() {
     const user = ref({});
     const accountCreated = ref("");
-    const auth = getAuth();
-    const currentUser = auth.currentUser;
     const profilePictureUrl = ref("");
     const defaultProfilePicture = new URL(
       "@/assets/default-profile.jpg",
       import.meta.url
     ).href;
+    const qrCodes = ref([]);
+
+    const auth = getAuth();
+    const currentUser = auth.currentUser;
 
     const fetchUserProfile = async () => {
       if (currentUser) {
@@ -115,7 +141,32 @@ export default {
       }
     };
 
-    // Reset password function
+    const fetchUserQrCodes = async () => {
+      if (!currentUser) return;
+      const codes = [];
+      try {
+        const qrCodesQuery = query(
+          collection(db, "guest_qrcodes"),
+          where("createdBy", "==", currentUser.email)
+        );
+        const querySnapshot = await getDocs(qrCodesQuery);
+        querySnapshot.forEach((doc) => {
+          const data = doc.data();
+          codes.push({
+            id: doc.id,
+            guestName: data.guestName,
+            category: data.category,
+            createdAt: data.createdAt
+              ? new Date(data.createdAt.seconds * 1000).toLocaleString()
+              : "Unknown",
+          });
+        });
+        qrCodes.value = codes;
+      } catch (error) {
+        console.error("Error fetching user QR codes:", error);
+      }
+    };
+
     const resetPassword = async () => {
       if (!user.value.email) {
         alert("No email found for this account.");
@@ -131,8 +182,13 @@ export default {
       }
     };
 
+    const navigateToQRCodeManagement = () => {
+      window.location.href = "/manage-qr"; // Ensure the route matches your app's setup
+    };
+
     onMounted(() => {
       fetchUserProfile();
+      fetchUserQrCodes();
     });
 
     return {
@@ -141,7 +197,9 @@ export default {
       profilePictureUrl,
       defaultProfilePicture,
       uploadProfilePicture,
-      resetPassword
+      resetPassword,
+      qrCodes,
+      navigateToQRCodeManagement,
     };
   },
 };
@@ -187,8 +245,7 @@ export default {
 }
 
 /* Profile and system-alerts classes aligned in column */
-.profile,
-.system-alerts {
+.profile {
   /* margin-bottom: 20px; Add some space between items */
   padding: 20px;
   background-color: #ffffff; /* Light background for clarity */
@@ -199,12 +256,49 @@ export default {
 
 /* Recent activities to take the full right side */
 .recent-activities {
-  width: 70%; /* Right side takes 70% of the width */
+  width: 70%;
   padding: 20px;
-  background-color: #ffffff; /* Light background for clarity */
+  background-color: #ffffff;
   border-radius: 12px;
   box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
   margin-left: 20px;
+}
+
+h2 {
+  color: #007f66;
+  font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+}
+
+.table-container table {
+  width: 100%;
+  border-collapse: collapse;
+  text-transform: capitalize;
+}
+
+.table-container th,
+.table-container td {
+  padding: 10px;
+  border: 1px solid #ddd;
+}
+
+.table-container th {
+  background-color: #e0e0e0;
+  color: #007f66;
+  font-weight: bold;
+}
+
+.table-container tr:nth-child(even) {
+  background-color: #f9f9f9;
+}
+
+.manage-link {
+  cursor: pointer;
+  color: #007f66;
+  text-decoration: none;
+}
+
+.manage-link:hover {
+  color: #005a48;
 }
 
 .profile h2,

@@ -7,10 +7,10 @@
 
     <div class="main-content">
       <div class="content-container">
-      <h2>Your Generated QR Codes</h2>
+        <h2>Your Generated QR Codes</h2>
 
-      <div class="controls">
-        <input
+        <div class="controls">
+          <input
             v-model="searchQuery"
             type="text"
             placeholder="Search by guest name..."
@@ -28,142 +28,157 @@
             <option value="latest">Sort by Latest</option>
             <option value="oldest">Sort by Oldest</option>
           </select>
-      </div>
+        </div>
 
-      <div v-if="filteredQRCodes.length === 0">
-        <p>You have not generated any QR codes yet.</p>
-      </div>
+        <div v-if="filteredQRCodes.length === 0">
+          <p>You have not generated any QR codes yet.</p>
+        </div>
 
-      <div v-else class="table-container">
-        <table>
-          <thead>
-            <tr>
-              <th>Guest Name</th>
-              <th>Category</th>
-              <th>Start Date</th>
-              <th>Expiration Time</th>
-              <th>Actions</th>
-            </tr>
-          </thead>
-          <tbody>
-            <tr v-for="(qrCode, index) in filteredQRCodes" :key="index">
-              <td>
-                <a href="#" @click.prevent="viewQRCode(qrCode)" class="guest-link">
-                  {{ qrCode.guestName }}
-                </a>
-              </td>
-              <td>{{ qrCode.category }}</td>
-              <td>{{ getStartDate(qrCode) }}</td>
-              <td>{{ formatExpirationTime(qrCode.expirationTime) }}</td>
-              <td>
-                <button @click="openEditModal(qrCode)">Edit</button>
-                <!-- <button @click="deleteQRCode(qrCode.id)" class="delete-button">
+        <div v-else class="table-container">
+          <table>
+            <thead>
+              <tr>
+                <th>Guest Name</th>
+                <th>Category</th>
+                <th>Start Date</th>
+                <th>Expiration Time</th>
+                <th>Actions</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr v-for="(qrCode, index) in filteredQRCodes" :key="index">
+                <td>
+                  <a
+                    href="#"
+                    @click.prevent="viewQRCode(qrCode)"
+                    class="guest-link"
+                  >
+                    {{ qrCode.guestName }}
+                  </a>
+                </td>
+                <td>{{ qrCode.category }}</td>
+                <td>{{ getStartDate(qrCode) }}</td>
+                <td>{{ formatExpirationTime(qrCode.expirationTime) }}</td>
+                <td>
+                  <button @click="openEditModal(qrCode)">Edit</button>
+                  <!-- <button @click="deleteQRCode(qrCode.id)" class="delete-button">
                   Delete
                 </button> -->
-              </td>
-            </tr>
-          </tbody>
-        </table>
-      </div>
-
-      <!-- Edit Modal -->
-      <div v-if="showEditModal" class="modal-overlay">
-        <div class="modal">
-          <h3>Edit QR Code</h3>
-          <form @submit.prevent="updateQRCode">
-            <div class="form-group">
-              <label for="guestName">Guest Name:</label>
-              <input
-                type="text"
-                v-model="selectedQRCode.guestName"
-                id="guestName"
-                required
-              />
-            </div>
-
-            <div v-if="selectedQRCode.entryType === 'group'" class="form-group">
-              <label for="guestList">List of Names (Separate names by pressing enter):</label>
-              <textarea
-                v-model="selectedQRCode.names"
-                id="guestList"
-                placeholder="Enter one name per line"
-              ></textarea>
-            </div>
-
-            <div class="form-group">
-              <label for="newImage">Update Image:</label>
-              <input
-                type="file"
-                @change="uploadNewImage"
-                id="newImage"
-                accept="image/*"
-              />
-              <small v-if="selectedQRCode.imageUrl">
-                Current Image:
-                <img
-                  :src="selectedQRCode.imageUrl"
-                  alt="Current Image"
-                  class="current-image"
-                />
-              </small>
-            </div>
-
-            <div class="form-group">
-              <label for="startDate">Start Date:</label>
-              <input
-                type="datetime-local"
-                v-model="newStartDate"
-                id="startDate"
-                required
-              />
-            </div>
-
-            <div class="form-group">
-              <label for="expirationTime">Expiration Time:</label>
-              <input
-                type="datetime-local"
-                v-model="newExpirationTime"
-                id="expirationTime"
-                required
-              />
-            </div>
-
-            <div class="form-actions">
-              <button type="submit" class="save-button">Save</button>
-              <button type="button" @click="closeEditModal" class="cancel-button">Cancel</button>
-              <button
-                type="button"
-                @click="expireQRCodeNow"
-                class="expire-button"
-              >
-                Expire Now
-              </button>
-            </div>
-          </form>
+                </td>
+              </tr>
+            </tbody>
+          </table>
         </div>
-      </div>
 
-      <!-- QR Code Modal -->
-      <div v-if="showQRCodeModal" class="modal-overlay">
-        <div class="modal">
-          <h3>
-            QR Code for
-            {{ selectedQRCode.guestName }}
-          </h3>
-          <img :src="selectedQRCode.qrCodeUrl" alt="Generated QR Code" />
-          <div class="modal-actions">
-            <a
-              :href="selectedQRCode.qrCodeUrl"
-              :download="selectedQRCode.guestName + '-QRCode.png'"
-              class="download-button"
-            >
-              Download QR Code
-            </a>
-            <button @click="closeQRCodeModal">Close</button>
+        <!-- Edit Modal -->
+        <div v-if="showEditModal" class="modal-overlay">
+          <div class="modal">
+            <h3>Edit QR Code</h3>
+            <form @submit.prevent="updateQRCode">
+              <div class="form-group">
+                <label for="guestName">Guest Name:</label>
+                <input
+                  type="text"
+                  v-model="selectedQRCode.guestName"
+                  id="guestName"
+                  required
+                />
+              </div>
+
+              <div
+                v-if="selectedQRCode.entryType === 'group'"
+                class="form-group"
+              >
+                <label for="guestList"
+                  >List of Names (Separate names by pressing enter):</label
+                >
+                <textarea
+                  v-model="selectedQRCode.names"
+                  id="guestList"
+                  placeholder="Enter one name per line"
+                ></textarea>
+              </div>
+
+              <div class="form-group">
+                <label for="newImage">Update Image:</label>
+                <input
+                  type="file"
+                  @change="uploadNewImage"
+                  id="newImage"
+                  accept="image/*"
+                />
+                <small v-if="selectedQRCode.imageUrl">
+                  Current Image:
+                  <img
+                    :src="selectedQRCode.imageUrl"
+                    alt="Current Image"
+                    class="current-image"
+                  />
+                </small>
+              </div>
+
+              <div class="form-group">
+                <label for="startDate">Start Date:</label>
+                <input
+                  type="datetime-local"
+                  v-model="newStartDate"
+                  id="startDate"
+                  required
+                />
+              </div>
+
+              <div class="form-group">
+                <label for="expirationTime">Expiration Time:</label>
+                <input
+                  type="datetime-local"
+                  v-model="newExpirationTime"
+                  id="expirationTime"
+                  required
+                />
+              </div>
+
+              <div class="form-actions">
+                <button type="submit" class="save-button">Save</button>
+                <button
+                  type="button"
+                  @click="closeEditModal"
+                  class="cancel-button"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="button"
+                  @click="expireQRCodeNow"
+                  class="expire-button"
+                >
+                  Expire Now
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+
+        <!-- QR Code Modal -->
+        <div v-if="showQRCodeModal" class="modal-overlay">
+          <div class="modal">
+            <h3>
+              QR Code for
+              {{ selectedQRCode.guestName }}
+            </h3>
+            <img :src="selectedQRCode.qrCodeUrl" alt="Generated QR Code" />
+            <div class="modal-actions">
+              <a
+                :href="selectedQRCode.qrCodeUrl"
+                :download="selectedQRCode.guestName + '-QRCode.png'"
+                class="download-button"
+              >
+                Download QR Code
+              </a>
+              <button @click="closeQRCodeModal">Close</button>
+            </div>
           </div>
         </div>
       </div>
-    </div>
     </div>
   </div>
 </template>
@@ -204,15 +219,15 @@ export default {
       userRole: null,
       searchQuery: "",
       selectedCategory: "",
-      sortOption: "latest"
+      sortOption: "latest",
     };
   },
   async created() {
     await this.fetchUserQRCodes();
-    await this.getUserRole()
+    await this.getUserRole();
   },
-  computed:{
-    filteredQRCodes(){
+  computed: {
+    filteredQRCodes() {
       let filtered = this.qrCodes;
 
       // Filter by search query
@@ -225,29 +240,30 @@ export default {
       }
 
       // Filter by category
-      if(this.selectedCategory){
-        filtered  = filtered.filter(
+      if (this.selectedCategory) {
+        filtered = filtered.filter(
           (qrCode) =>
-            qrCode.category.toLowerCase() === this.selectedCategory.toLowerCase()
-        )
+            qrCode.category.toLowerCase() ===
+            this.selectedCategory.toLowerCase()
+        );
       }
 
       // Sort by date (latest or oldest)
-    if (this.sortOption === "latest") {
-      filtered.sort((a, b) => {
-        if (!a.createdAt || !b.createdAt) return 0; // Skip if createdAt is missing
-        return b.createdAt.seconds - a.createdAt.seconds;
-      });
-    } else if (this.sortOption === "oldest") {
-      filtered.sort((a, b) => {
-        if (!a.createdAt || !b.createdAt) return 0; // Skip if createdAt is missing
-        return a.createdAt.seconds - b.createdAt.seconds;
-      });
-    }
+      if (this.sortOption === "latest") {
+        filtered.sort((a, b) => {
+          if (!a.createdAt || !b.createdAt) return 0; // Skip if createdAt is missing
+          return b.createdAt.seconds - a.createdAt.seconds;
+        });
+      } else if (this.sortOption === "oldest") {
+        filtered.sort((a, b) => {
+          if (!a.createdAt || !b.createdAt) return 0; // Skip if createdAt is missing
+          return a.createdAt.seconds - b.createdAt.seconds;
+        });
+      }
 
-      return filtered
-    }
-  },  
+      return filtered;
+    },
+  },
   methods: {
     async getUserRole() {
       const auth = getAuth();
@@ -316,7 +332,7 @@ export default {
       this.selectedQRCode = { ...qrCode };
       this.newStartDate = qrCode.startDate
         ? new Date(qrCode.startDate.seconds * 1000).toISOString().slice(0, 16)
-        : new Date(qrCode.createdAt.seconds * 1000).toISOString().slice(0, 16)
+        : new Date(qrCode.createdAt.seconds * 1000).toISOString().slice(0, 16);
       this.newExpirationTime = qrCode.expirationTime
         ? new Date(qrCode.expirationTime.seconds * 1000)
             .toISOString()
@@ -424,8 +440,9 @@ export default {
   font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
 }
 
-.content-container{
-  max-width: 900px;
+.content-container {
+  /* max-width: 900px; */
+  width: -webkit-fill-available;
   margin-left: 50px;
   background-color: #ffffff;
   padding: 20px;
@@ -445,7 +462,7 @@ export default {
   overflow-y: auto;
 }
 
-.search-input{
+.search-input {
   width: 300px;
 }
 
@@ -465,18 +482,18 @@ export default {
   box-shadow: 0 0 10px rgba(0, 191, 165, 0.5);
 }
 
-h2{
+h2 {
   text-align: left;
 }
 
 .table-container {
-  max-height: 69vh;
+  max-height: 80vh;
+  border-radius: 10px;
   overflow-y: auto;
   overflow-x: auto;
   border: 1px solid #ddd;
-  border-radius: 10px;
-  background-color: #fff;
-  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+  background-color: white;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
   height: calc(100vh - 100px);
 }
 
@@ -497,22 +514,25 @@ h2{
 table {
   width: 100%;
   border-collapse: collapse;
+  margin-top: 0px;
 }
 
 th,
 td {
-  border: 1px solid #ccc;
-  padding: 10px;
+  padding: 12px;
   text-align: left;
-  text-transform: capitalize;
+  border: 1px solid #ddd;
+  cursor: pointer;
+  font-size: 1rem;
 }
 
 th {
   background-color: #e0e0e0;
   color: #00bfa5;
+  font-weight: bold;
 }
 
-td{
+td {
   font-size: 0.9rem;
 }
 
@@ -752,7 +772,7 @@ tr:nth-child(even) {
     padding: 8px;
   }
 
-  .content-container{
+  .content-container {
     margin-left: 0px;
   }
 

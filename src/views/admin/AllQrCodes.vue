@@ -71,8 +71,8 @@
 <script>
 import SidebarNav from "@/components/SidebarNav.vue";
 import { db } from "@/firebase";
-import { collection, getDocs } from "firebase/firestore";
-import { ref, onMounted, computed } from "vue";
+import { collection, getDocs, onSnapshot } from "firebase/firestore";
+import { ref, onMounted, computed, onUnmounted } from "vue";
 
 export default {
   components: {
@@ -82,36 +82,72 @@ export default {
     const qrCodes = ref([]);
     const searchQuery = ref("");
     const sortOption = ref("latest");
+    let unsubscribe = null;
 
     // Fetch QR codes from Firestore
-    const fetchQrCodes = async () => {
-      const codes = [];
+    // const fetchQrCodes = async () => {
+    //   const codes = [];
 
-      try {
-        const qrCodesSnapshot = await getDocs(collection(db, "guest_qrcodes"));
-        qrCodesSnapshot.forEach((doc) => {
+    //   try {
+    //     const qrCodesSnapshot = await getDocs(collection(db, "guest_qrcodes"));
+    //     qrCodesSnapshot.forEach((doc) => {
+    //       const data = doc.data();
+    //       codes.push({
+    //         id: doc.id,
+    //         guestName: data.guestName || "N/A",
+    //         creatorName: data.creatorName || "Unknown Creator",
+    //         createdAt: data.createdAt ? data.createdAt.toDate() : "Unknown",
+    //         startDate: data.startDate
+    //           ? data.startDate.toDate()
+    //           : data.createdAt.toDate()
+    //           ? data.createdAt.toDate()
+    //           : "Unknown",
+    //         expirationTime: data.expirationTime
+    //           ? data.expirationTime.toDate()
+    //           : "Unknown",
+    //       });
+    //     });
+
+    //     qrCodes.value = codes;
+    //   } catch (error) {
+    //     console.error("Error fetching QR codes:", error);
+    //   }
+    // };
+
+    // Set up a real-time listener for QR codes
+    const setupRealtimeListener = () => {
+      const qrCodesCollection = collection(db, "guest_qrcodes");
+
+      unsubscribe = onSnapshot(qrCodesCollection, (snapshot) => {
+        const codes = [];
+        snapshot.forEach((doc) => {
           const data = doc.data();
           codes.push({
             id: doc.id,
             guestName: data.guestName || "N/A",
             creatorName: data.creatorName || "Unknown Creator",
-            createdAt: data.createdAt ? data.createdAt.toDate() : "Unknown",
+            createdAt: data.createdAt ? data.createdAt.toDate() : null,
             startDate: data.startDate
               ? data.startDate.toDate()
-              : data.createdAt.toDate()
+              : data.createdAt
               ? data.createdAt.toDate()
-              : "Unknown",
+              : null,
             expirationTime: data.expirationTime
               ? data.expirationTime.toDate()
-              : "Unknown",
+              : null,
           });
         });
-
         qrCodes.value = codes;
-      } catch (error) {
-        console.error("Error fetching QR codes:", error);
-      }
+        console.log("QR Codes updated:", codes);
+      });
     };
+
+    // Cleanup the listener when the component unmounts
+    onUnmounted(() => {
+      if (unsubscribe) {
+        unsubscribe();
+      }
+    });
 
     // Filtered and Sorted QR Codes
     const filteredQrCodes = computed(() => {
@@ -141,7 +177,10 @@ export default {
       return result;
     });
 
-    onMounted(fetchQrCodes);
+    // onMounted(fetchQrCodes);
+    onMounted(() => {
+      setupRealtimeListener();
+    });
 
     return {
       qrCodes,

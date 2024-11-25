@@ -16,19 +16,39 @@
             <router-link to="/dashboard">Dashboard</router-link>
           </li> -->
           <li>
-            <router-link to="/users-management">Users Management</router-link>
+            <router-link
+              to="/users-management"
+              @click="reloadIfActive('/users-management')"
+              >Users Management</router-link
+            >
           </li>
           <li>
-            <router-link to="/all-qr-codes">QR Codes</router-link>
+            <router-link
+              to="/all-qr-codes"
+              @click="reloadIfActive('/all-qr-codes')"
+              >QR Codes</router-link
+            >
           </li>
           <li>
-            <router-link to="/security-logs">Resident Logs</router-link>
+            <router-link
+              to="/security-logs"
+              @click="reloadIfActive('/security-logs')"
+              >Resident Logs</router-link
+            >
           </li>
           <li>
-            <router-link to="/all-guest-logs">Guest Logs</router-link>
+            <router-link
+              to="/all-guest-logs"
+              @click="reloadIfActive('/all-guest-logs')"
+              >Guest Logs</router-link
+            >
           </li>
           <li>
-            <router-link to="/generate-qr">QR Code Generate</router-link>
+            <router-link
+              to="/generate-qr"
+              @click="reloadIfActive('/generate-qr')"
+              >QR Code Generate</router-link
+            >
           </li>
           <!-- <li>
             <router-link to="/system-management">System Management</router-link>
@@ -40,7 +60,9 @@
       <div class="add-resident">
         <button @click="openModal" id="addRes">Add A New User</button>
         <br /><br />
-        <button @click="handleSignOut">Log Out</button>
+        <div class="logout">
+          <button @click="handleSignOut">Log Out</button>
+        </div>
       </div>
     </div>
 
@@ -358,6 +380,12 @@ export default {
       }
     };
 
+    const reloadIfActive = (path) => {
+      if (router.currentRoute.value.path === path) {
+        window.location.reload();
+      }
+    };
+
     onMounted(() => {
       setupListener();
       onAuthStateChanged(auth, (user) => {
@@ -379,6 +407,7 @@ export default {
       closeModal,
       addResident,
       handleSignOut,
+      reloadIfActive,
     };
   },
 };
