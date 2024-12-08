@@ -6,24 +6,26 @@
     <!-- Main content on the right -->
     <div class="main-content" @click="handleOutsideClick">
       <div class="container">
-        <div class="dashboard-grid">
-          <div class="profile">
-            <h2>My Profile 👤</h2>
-            <div class="profile-info">
-              <div class="profile-details">
-                <p>
-                  <strong>Name:</strong> {{ user.firstName }}
-                  {{ user.lastName }}
-                </p>
-                <p class="p-role"><strong>Role:</strong> {{ user.role }}</p>
-                <p><strong>Account created:</strong> {{ accountCreated }}</p>
-                <p><strong>Email:</strong> {{ user.email }}</p>
-              </div>
+        <div class="activities">
+          <div class="activity-card">
+            <h2>Gate Entries</h2>
+            <div v-if="showEntryGrantedModal" class="modal-content">
+              <h2>Entry Granted</h2>
+              <br />
+              <img
+                :src="residentProfilePic"
+                alt="Profile Picture"
+                class="profile-pic"
+              />
+              <p><strong>Resident Name:</strong> {{ residentName }}</p>
+              <p><strong>Phase:</strong> {{ residentPhase }}</p>
+              <p><strong>Mode:</strong> {{ entryMode }}</p>
+              <button @click="closeEntryModal">Close</button>
             </div>
           </div>
-          <br />
-          <div class="system-alerts">
-            <h2>Gate Exits ⚠️</h2>
+
+          <div class="activity-card">
+            <h2>Gate Exits</h2>
             <div v-if="showExitModal" class="modal-content-exit">
               <h2>Exited</h2>
               <br />
@@ -34,25 +36,31 @@
               />
               <p><strong>Resident Name:</strong> {{ exitResidentName }}</p>
               <p><strong>Phase:</strong> {{ exitResidentPhase }}</p>
+              <p><strong>Mode:</strong> {{ exitMode }}</p>
               <button @click="closeExitModal">Close</button>
             </div>
           </div>
         </div>
 
+        <!-- Recent activities -->
         <div class="recent-activities">
-          <h2>Gate Entries 📊</h2>
-          <div v-if="showEntryGrantedModal" class="modal-content">
-            <h2>Entry Granted</h2>
-            <br />
-            <img
-              :src="residentProfilePic"
-              alt="Profile Picture"
-              class="profile-pic"
-            />
-            <p><strong>Resident Name:</strong> {{ residentName }}</p>
-            <p><strong>Phase:</strong> {{ residentPhase }}</p>
-            <button @click="closeEntryModal">Close</button>
-          </div>
+          <h2>Recent Activities</h2>
+          <ul>
+            <li v-for="(activity, index) in recentActivities" :key="index">
+              <div class="activity-details">
+                <img
+                  :src="activity.profilePic"
+                  alt="Profile Picture"
+                  class="activity-pic"
+                />
+                <div>
+                  <p><strong>Name:</strong> {{ activity.name }}</p>
+                  <p><strong>Mode:</strong> {{ activity.mode }}</p>
+                  <p><strong>Time:</strong> {{ activity.timestamp }}</p>
+                </div>
+              </div>
+            </li>
+          </ul>
         </div>
       </div>
     </div>
@@ -71,6 +79,8 @@ import {
   query,
   where,
   getDocs,
+  orderBy,
+  limit,
 } from "firebase/firestore";
 import { getAuth, onAuthStateChanged } from "firebase/auth";
 import {
@@ -93,16 +103,21 @@ export default {
     const accountCreated = ref("");
     const auth = getAuth();
     const storage = getStorage();
+
     const showEntryGrantedModal = ref(false);
     const residentName = ref("");
     const residentPhase = ref("");
     const residentProfilePic = ref("");
+    const entryMode = ref("");
 
     // Separate state variables for exit modal
     const showExitModal = ref(false);
     const exitResidentName = ref("");
     const exitResidentPhase = ref("");
     const exitProfilePic = ref("");
+    const exitMode = ref("");
+
+    const recentActivities = ref([]);
 
     let initializedEntries = false;
     let initializedExits = false;
@@ -176,6 +191,7 @@ export default {
                     userSnapshot.docs[0].id
                   );
                   residentPhase.value = `${userDoc.phase}`;
+                  entryMode.value = entry.mode;
 
                   showEntryGrantedModal.value = true;
                   console.log("Modal should show now");
@@ -229,6 +245,7 @@ export default {
                     userSnapshot.docs[0].id
                   );
                   exitResidentPhase.value = `${userDoc.phase}`;
+                  exitMode.value = exit.mode;
 
                   showExitModal.value = true;
                   console.log("Exit should show now");
@@ -243,6 +260,51 @@ export default {
             console.warn("rfidTag is undefined in entry:", entry);
           }
         });
+      });
+    };
+
+    const fetchRecentActivities = () => {
+      const activityQuery = query(
+        collection(db, "all_rfid_logs"),
+        orderBy("timestamp", "desc"),
+        limit(4)
+      );
+
+      // Use Firestore onSnapshot to listen for real-time updates
+      onSnapshot(activityQuery, async (snapshot) => {
+        const activities = await Promise.all(
+          snapshot.docs.map(async (doc) => {
+            const data = doc.data();
+            const userQuery = query(
+              collection(db, "users"),
+              where("rfidTag", "==", data.rfidTag)
+            );
+
+            const userSnapshot = await getDocs(userQuery);
+
+            if (!userSnapshot.empty) {
+              const userDoc = userSnapshot.docs[0];
+              const userData = userDoc.data();
+              const profilePic = await getProfilePictureUrl(userDoc.id);
+
+              return {
+                name: `${userData.firstName} ${userData.lastName}`,
+                mode: data.mode,
+                timestamp: data.timestamp
+                  ? data.timestamp.toDate().toLocaleString()
+                  : "Unknown",
+                profilePic: profilePic,
+              };
+            }
+
+            return null;
+          })
+        );
+
+        // Filter out any null entries (if no matching user was found)
+        recentActivities.value = activities.filter(
+          (activity) => activity !== null
+        );
       });
     };
 
@@ -262,6 +324,7 @@ export default {
           fetchUserProfile(currentUser.uid);
           listenForAcceptedEntries();
           listenForExits();
+          fetchRecentActivities();
         } else {
           console.error("No user is signed in");
         }
@@ -279,8 +342,11 @@ export default {
       exitResidentName,
       exitProfilePic,
       exitResidentPhase,
+      recentActivities,
       closeEntryModal,
       closeExitModal,
+      entryMode,
+      exitMode,
     };
   },
 };
@@ -316,36 +382,95 @@ export default {
   padding: 20px;
   background-color: #00bfa5;
   height: 100vh;
+  overflow-y: auto;
 }
 
-.content{
-  margin-left: 50px;
-}
-
-.dashboard-grid {
+.container {
   display: flex;
   flex-direction: column;
-  width: 30%; /* Left side takes 30% of the width */
   margin-left: 50px;
+  gap: 20px;
+  width: 96%;
+  height: 96%; /* Make the container fit the screen height */
+  overflow: hidden; /* Prevent overflow */
 }
 
-/* Profile and system-alerts classes aligned in column */
-.profile,
-.system-alerts {
-  /* margin-bottom: 20px; Add some space between items */
+.activities {
+  display: flex;
+  gap: 20px;
+  justify-content: space-between;
+  flex-grow: 2;
+  max-height: 70%;
+}
+
+.activity-card {
+  flex: 1;
+  background-color: #f0f0f0;
   padding: 20px;
-  background-color: #f0f0f0; /* Light background for clarity */
-  border-radius: 8px;
-  height: 100%;
+  border-radius: 12px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  overflow: auto;
+  text-align: center;
 }
 
-/* Recent activities to take the full right side */
+.activity-card h2 {
+  color: #00796b;
+  font-size: 1.5rem;
+  margin-bottom: 15px;
+}
+
 .recent-activities {
-  width: 70%; /* Right side takes 70% of the width */
+  width: 100%;
+  background-color: #ffffff;
   padding: 20px;
-  background-color: #f0f0f0; /* Light background for clarity */
+  border-radius: 12px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  display: flex;
+  flex-wrap: nowrap;
+  gap: 20px;
+  overflow-x: auto;
+  align-items: center;
+}
+
+.recent-activities h2 {
+  font-size: 1.5rem;
+  color: #00796b;
+  margin-bottom: 15px;
+  flex-basis: 100%; /* Ensure the heading spans the full width */
+  text-align: left;
+}
+
+.recent-activities ul {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: flex; /* Arrange list items in a row */
+  gap: 20px; /* Space between list items */
+}
+
+.activity-details {
+  display: flex;
+  align-items: flex-start;
+  flex-direction: column;
+  gap: 10px;
+  padding: 10px;
   border-radius: 8px;
-  margin-left: 20px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  min-width: 200px; /* Ensure all activity cards have a consistent width */
+  flex: 0 0 auto;
+}
+
+.activity-pic {
+  width: 50px;
+  height: 50px;
+  border-radius: 50%;
+  object-fit: cover;
+}
+
+.activity-details div p {
+  margin: 5px 0;
+  font-size: 0.9rem;
+  color: #333;
 }
 
 h1 {
@@ -357,44 +482,21 @@ h1 {
   text-transform: capitalize;
 }
 
-.modal-content {
+.modal-content,
+.modal-content-exit {
   background-color: #fff;
   padding: 20px;
   border-radius: 8px;
-  max-width: 100%;
   text-align: center;
   box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
   margin-top: 20px;
 }
 
-.modal-content h2 {
-  display: inline-block; /* Allows the border to wrap tightly around the text */
-  padding: 8px 12px; /* Adds space inside the border */
-  border: 2px solid #3498db; /* Border with specified color */
-  border-radius: 5px; /* Rounds the corners (optional) */
-  font-weight: bold; /* Makes the text bold (optional) */
-  color: #000000; /* Text color */
-  background-color: #109b45;
-}
-
-.modal-content-exit {
-  background-color: #ffffff;
-  padding: 20px;
-  border: 2px solid #f5c6cb; /* Matches system-alerts border */
-  border-radius: 8px;
-  text-align: center;
-  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
-  margin-top: 10px;
-}
-
+.modal-content h2,
 .modal-content-exit h2 {
-  display: inline-block;
-  padding: 8px 12px;
-  border: 2px solid #f1d639; /* Red border for 'Exited' text */
-  border-radius: 5px;
-  color: #000000; /* Match the border color */
-  font-weight: bold;
-  background-color: #eb7d51;
+  color: #00796b;
+  font-size: 1.5rem;
+  margin-bottom: 15px;
 }
 
 .modal-content,
