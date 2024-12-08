@@ -19,6 +19,7 @@ import AllQrCodes from "@/views/admin/AllQrCodes.vue";
 import MyGuestLogs from "@/views/users/MyGuestLogs.vue";
 import SecurityFAQ from "@/views/security/SecurityFAQ.vue";
 import ResidentFAQ from "@/views/users/ResidentFAQ.vue";
+import HouseholdLogs from "@/views/users/HouseholdLogs.vue";
 
 const routes = [
   {
@@ -81,6 +82,11 @@ const routes = [
     component: MyLogs,
   },
   {
+    path: "/household-logs",
+    name: "household-logs",
+    component: HouseholdLogs,
+  },
+  {
     path: "/my-guest-logs",
     name: "my-guest-logs",
     component: MyGuestLogs,
@@ -88,7 +94,7 @@ const routes = [
   {
     path: "/resident-faq",
     name: "resident-faq",
-    component: ResidentFAQ
+    component: ResidentFAQ,
   },
   {
     path: "/user-notification",
@@ -108,7 +114,7 @@ const routes = [
   {
     path: "/security-faq",
     name: "security-faq",
-    component: SecurityFAQ
+    component: SecurityFAQ,
   },
   {
     path: "/qr-scan",

@@ -37,7 +37,7 @@
           <input
             v-model="searchQuery"
             type="text"
-            placeholder="Search by full name or RFID tag..."
+            placeholder="Search by full name, RFID tag, or household ID..."
           />
 
           <select v-model="selectedFilter" @change="sortUsers">
@@ -55,6 +55,7 @@
                   <th>Full Name</th>
                   <th>Role</th>
                   <th>RFID Tag</th>
+                  <th>Household ID</th>
                   <th>Actions</th>
                 </tr>
               </thead>
@@ -63,6 +64,7 @@
                   <td class="info">{{ user.firstName }} {{ user.lastName }}</td>
                   <td class="info">{{ user.role }}</td>
                   <td class="info">{{ user.rfidTag }}</td>
+                  <td class="info">{{ user.householdId }}</td>
                   <td>
                     <button @click="openEditModal(user)">Edit</button>
                     <button @click="deleteUser(user.id)">Delete</button>
@@ -104,33 +106,49 @@
                   <option value="admin">Admin</option>
                 </select>
               </div>
-              <div class="form-group">
-                <label for="phase">Phase:</label>
-                <input
-                  type="text"
-                  v-model="selectedUser.phase"
-                  id="phase"
-                  required
-                />
+
+              <div v-if="selectedUser.role === 'resident'">
+                <div class="form-group">
+                  <label for="phase">Phase:</label>
+                  <input
+                    type="text"
+                    v-model="selectedUser.phase"
+                    id="phase"
+                    required
+                  />
+                </div>
+                <div class="form-group">
+                  <label for="houseBlockAndLot"
+                    >House Block & Lot Number:</label
+                  >
+                  <input
+                    type="text"
+                    v-model="selectedUser.houseLotNumber"
+                    id="houseLotNumber"
+                    required
+                  />
+                </div>
+                <div class="form-group">
+                  <label for="street">Street Name:</label>
+                  <input
+                    type="text"
+                    v-model="selectedUser.street"
+                    id="street"
+                    required
+                  />
+                </div>
+
+                <div class="form-group">
+                  <label for="isHead"
+                    >Is this resident the head of household?</label
+                  >
+                  <select v-model="selectedUser.isHead" id="isHead" required>
+                    <option :value="true">Yes</option>
+                    <option :value="false">No</option>
+                  </select>
+                </div>
               </div>
-              <div class="form-group">
-                <label for="houseBlockAndLot">House Block & Lot Number:</label>
-                <input
-                  type="text"
-                  v-model="selectedUser.houseLotNumber"
-                  id="houseLotNumber"
-                  required
-                />
-              </div>
-              <div class="form-group">
-                <label for="street">Street Name:</label>
-                <input
-                  type="text"
-                  v-model="selectedUser.street"
-                  id="street"
-                  required
-                />
-              </div>
+
               <div class="form-group">
                 <label for="activeStatus">Active Status:</label>
                 <select
@@ -230,6 +248,9 @@ export default {
               .includes(searchQuery.value.toLowerCase()) ||
             `${user.rfidTag}`
               .toLowerCase()
+              .includes(searchQuery.value.toLowerCase()) ||
+            `${user.householdId}`
+              .toLowerCase()
               .includes(searchQuery.value.toLowerCase())
         );
       }
@@ -275,6 +296,7 @@ export default {
           phase: selectedUser.value.phase,
           houseLotNumber: selectedUser.value.houseLotNumber,
           street: selectedUser.value.street,
+          isHead: selectedUser.value.isHead || false,
           activeStatus: selectedUser.value.activeStatus === "true",
         });
 

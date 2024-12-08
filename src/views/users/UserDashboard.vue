@@ -63,6 +63,12 @@
               </tbody>
             </table>
           </div>
+
+          <div class="view-logs-container">
+            <button class="view-logs-button" @click="navigateToHouseholdLogs">
+              View Household Logs
+            </button>
+          </div>
         </div>
       </div>
     </div>
@@ -141,6 +147,10 @@ export default {
       }
     };
 
+    const navigateToHouseholdLogs = () => {
+      window.location.href = "/household-logs"; // Replace with the correct route name if using a router
+    };
+
     const fetchUserQrCodes = async () => {
       if (!currentUser) return;
       const codes = [];
@@ -200,6 +210,7 @@ export default {
       resetPassword,
       qrCodes,
       navigateToQRCodeManagement,
+      navigateToHouseholdLogs,
     };
   },
 };
@@ -267,6 +278,14 @@ export default {
 h2 {
   color: #007f66;
   font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+}
+
+.table-container {
+  height: 600px;
+  overflow-y: auto;
+  overflow-x: auto;
+  border: 1px solid #ccc;
+  border-radius: 8px;
 }
 
 .table-container table {
@@ -431,6 +450,44 @@ h2 {
 h1 {
   font-size: 36px;
   color: #333;
+}
+
+.view-logs-container {
+  display: flex;
+  justify-content: center;
+  margin-top: 20px; /* Add spacing above the button */
+}
+
+.view-logs-button {
+  background: linear-gradient(
+    to right,
+    #007f66,
+    #00bfa5
+  ); /* Gradient background */
+  color: white; /* Text color */
+  font-size: 1rem; /* Font size */
+  font-weight: bold; /* Bold text */
+  padding: 12px 24px; /* Add padding for a larger button */
+  border: none; /* Remove borders */
+  border-radius: 8px; /* Rounded corners */
+  cursor: pointer; /* Pointer cursor on hover */
+  transition: all 0.3s ease; /* Smooth transition effect */
+  box-shadow: 0 4px 10px rgba(0, 191, 165, 0.2); /* Subtle shadow */
+}
+
+.view-logs-button:hover {
+  background: linear-gradient(
+    to right,
+    #00bfa5,
+    #007f66
+  ); /* Invert gradient on hover */
+  box-shadow: 0 6px 12px rgba(0, 191, 165, 0.4); /* More shadow on hover */
+  transform: translateY(-2px); /* Slight lift effect */
+}
+
+.view-logs-button:active {
+  transform: translateY(0); /* Reset lift effect */
+  box-shadow: 0 2px 6px rgba(0, 191, 165, 0.2); /* Reduce shadow on click */
 }
 
 @media (max-width: 768px) {

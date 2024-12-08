@@ -59,6 +59,12 @@
       <!-- Add new resident button -->
       <div class="add-resident">
         <button @click="openModal" id="addRes">Add A New User</button>
+
+        <!-- New Button for Assigning Residents to Household -->
+        <button @click="openAssignModal" id="assignHousehold">
+          Assign Residents to Household
+        </button>
+
         <br /><br />
         <div class="logout">
           <button @click="handleSignOut">Log Out</button>
@@ -179,6 +185,86 @@
         </form>
       </div>
     </div>
+
+    <!-- Assign Residents to Household Modal -->
+    <div v-if="showAssignModal" class="modal-overlay">
+      <div class="modal">
+        <h2>Assign Residents to Household</h2>
+        <form @submit.prevent="assignToHousehold">
+          <div class="form-group">
+            <label for="householdID">Household ID:</label>
+            <input
+              v-model="householdId"
+              type="text"
+              id="householdId"
+              placeholder="Enter Household ID"
+              required
+            />
+          </div>
+
+          <div class="form-group">
+            <label>Select Residents:</label>
+
+            <!-- Search input -->
+            <input
+              v-model="searchQuery"
+              type="text"
+              class="search-input"
+              placeholder="Search residents by name or house lot number..."
+            />
+            <div v-if="residents.length === 0">
+              <p>All residents are already assigned to a household.</p>
+            </div>
+            <div v-else class="dropdown">
+              <div
+                v-for="resident in filteredResidents"
+                :key="resident.id"
+                class="dropdown-item"
+              >
+                <input
+                  type="checkbox"
+                  :value="resident.id"
+                  v-model="selectedResidents"
+                />
+                <span>{{ resident.firstName }} {{ resident.lastName }}</span>
+              </div>
+            </div>
+          </div>
+
+          <div class="form-actions">
+            <button type="submit">Assign to Household</button>
+            <button type="button" @click="closeAssignModal">Cancel</button>
+          </div>
+        </form>
+      </div>
+    </div>
+
+    <!-- Choose head of household -->
+    <div v-if="showHeadModal" class="modal-overlay">
+      <div class="modal">
+        <h2>Select Head of household</h2>
+        <form @submit.prevent="assignHead">
+          <div v-if="householdResidents.length > 0">
+            <div
+              v-for="resident in householdResidents"
+              :key="resident.id"
+              class="dropdown-item"
+            >
+              <input type="radio" :value="resident.id" v-model="selectedHead" />
+              <span>{{ resident.firstName }} {{ resident.lastName }}</span>
+            </div>
+          </div>
+          <div v-else>
+            <p v-if="householdResidents === null">Loading residents...</p>
+            <p>No residents found for this household.</p>
+          </div>
+          <div class="form-actions">
+            <button type="submit">Confirm Head</button>
+            <button type="button" @click="closeHeadModal">Cancel</button>
+          </div>
+        </form>
+      </div>
+    </div>
   </div>
 </template>
 
@@ -194,9 +280,10 @@ import {
   where,
   getDocs,
   updateDoc,
+  writeBatch,
   onSnapshot,
 } from "firebase/firestore";
-import { ref, onMounted, computed, onUnmounted } from "vue";
+import { ref, onMounted, computed, onUnmounted, watch } from "vue";
 import { useRouter } from "vue-router";
 
 export default {
@@ -204,7 +291,32 @@ export default {
   data() {
     return {
       isSidebarVisible: false,
+      showAssignModal: false,
+      showHeadModal: false,
+      householdId: "",
+      searchQuery: "",
+      residents: [],
+      selectedResidents: [],
+      householdResidents: [],
+      selectedHead: null,
     };
+  },
+  computed: {
+    filteredResidents() {
+      return this.residents.filter((resident) => {
+        const query = this.searchQuery.toLowerCase();
+        return (
+          resident.firstName.toLowerCase().includes(query) ||
+          resident.lastName.toLowerCase().includes(query) ||
+          resident.houseLotNumber?.toLowerCase().includes(query)
+        );
+      });
+    },
+  },
+  watch: {
+    householdResidents(newValue) {
+      console.log("Updated householdResidents:", newValue);
+    },
   },
   methods: {
     toggleSidebar() {
@@ -213,6 +325,133 @@ export default {
         document.addEventListener("click", this.handleOutsideClick);
       } else {
         document.removeEventListener("click", this.handleOutsideClick);
+      }
+    },
+    openAssignModal() {
+      this.fetchResidents();
+      this.showAssignModal = true;
+    },
+    closeAssignModal() {
+      this.showAssignModal = false;
+      this.selectedResidents = [];
+      this.householdId = "";
+    },
+    async fetchResidents() {
+      try {
+        console.log("Fetching unassigned residents...");
+        const q = query(
+          collection(db, "users"),
+          where("role", "==", "resident")
+        );
+        const querySnapshot = await getDocs(q);
+
+        console.log(
+          `Number of unassigned residents fetched: ${querySnapshot.size}`
+        );
+        this.residents = querySnapshot.docs
+          .map((doc) => ({
+            id: doc.id,
+            ...doc.data(),
+          }))
+          .filter((resident) => !resident.householdId);
+      } catch (error) {
+        console.error("Error fetching residents:", error);
+      }
+    },
+    async assignHead() {
+      if (!this.selectedHead) {
+        alert("Please select a head of household.");
+        return;
+      }
+
+      try {
+        console.log("Assigning head of household:", this.selectedHead);
+        const batch = writeBatch(db);
+
+        this.householdResidents.forEach((resident) => {
+          const residentRef = doc(db, "users", resident.id);
+          batch.update(residentRef, {
+            isHead: resident.id === this.selectedHead,
+          });
+        });
+
+        await batch.commit();
+        alert("Head of household successfully assigned!");
+        this.closeHeadModal();
+      } catch (error) {
+        console.error("Error assigning head of household:", error);
+        alert("Failed to assign head of household.");
+      }
+    },
+    closeHeadModal() {
+      this.showHeadModal = false;
+      this.householdResidents = [];
+      this.selectedHead = null;
+    },
+    async assignToHousehold() {
+      if (!this.householdId || this.selectedResidents.length === 0) {
+        alert("Please provide a Household ID and select at least one resident");
+        return;
+      }
+
+      try {
+        console.log(
+          "Assigning residents to household:",
+          this.selectedResidents
+        );
+        const batch = writeBatch(db);
+
+        // Update each selected resident with the household ID
+        this.selectedResidents.forEach((residentId) => {
+          const residentRef = doc(db, "users", residentId);
+          batch.update(residentRef, { householdId: this.householdId });
+        });
+
+        await batch.commit();
+        alert("Residents successfully assigned to household!");
+        this.showHeadModal = true;
+
+        await this.fetchHouseholdResidents(this.householdId);
+        this.closeAssignModal();
+      } catch (error) {
+        console.error("Error assigning household:", error);
+        alert("Failed to assign residents to the household.");
+      }
+    },
+    async fetchHouseholdResidents(householdId) {
+      try {
+        console.log("Fetching residents for householdId:", householdId);
+
+        // Check for null or undefined householdId
+        if (!householdId) {
+          console.error("householdId is null or undefined.");
+          this.householdResidents = [];
+          return;
+        }
+
+        const q = query(
+          collection(db, "users"),
+          where("householdId", "==", householdId)
+        );
+        const querySnapshot = await getDocs(q);
+
+        // Log the size of the result and check if it's empty
+        console.log(
+          `Number of residents fetched for householdId ${householdId}: ${querySnapshot.size}`
+        );
+        if (querySnapshot.empty) {
+          console.warn("No residents found for this householdId.");
+          this.householdResidents = [];
+          return;
+        }
+
+        this.householdResidents = querySnapshot.docs.map((doc) => ({
+          id: doc.id,
+          ...doc.data(),
+        }));
+        console.log("Fetched household residents:", this.householdResidents);
+      } catch (error) {
+        console.error("Error fetching household residents:", error);
       }
     },
     handleOutsideClick(event) {
@@ -577,6 +816,65 @@ export default {
   box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
   max-width: 500px;
   margin: 0 auto;
+}
+
+.dropdown {
+  max-height: 200px;
+  overflow-y: auto;
+  border: 1px solid #ddd;
+  border-radius: 10px;
+  padding: 10px;
+  background-color: #f9f9f9;
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+  width: 100%;
+}
+
+.dropdown-item {
+  display: flex;
+  align-items: center;
+  padding: 5px 10px;
+  border-bottom: 1px solid #ddd;
+  width: 50px;
+}
+
+.dropdown-item input[type="checkbox"] {
+  margin-right: 30px;
+  flex-shrink: 0;
+}
+
+.dropdown-item span {
+  flex-grow: 1;
+  font-size: 1rem;
+  color: #333;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+  display: inline-block;
+}
+
+/* Remove border for the last item */
+.dropdown-item:last-child {
+  border-bottom: none;
+}
+
+/* Style hover effect for better visibility */
+.dropdown-item:hover {
+  background-color: #e6f7ff;
+  border-radius: 5px;
+}
+
+#assignHousehold {
+  background: linear-gradient(to right, #00bfa5, #007f66);
+  color: white;
+  border: none;
+  border-radius: 10px;
+  padding: 10px 15px;
+  cursor: pointer;
+  font-weight: bold;
+  transition: background 0.3s;
+}
+
+#assignHousehold:hover {
+  background: linear-gradient(to right, #007f66, #00bfa5);
 }
 
 .form-group {
